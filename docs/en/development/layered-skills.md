@@ -13,20 +13,59 @@ An explicit operation still needs its real tool and observed result. An agent ma
 or load the relevant domain when it needs detail. Reading the router first, loading all domains, and loading before
 every response are not prerequisites. English and Chinese intent phrases live in actual Skill descriptions.
 
+## Shared source and distributions
+
+`integrations/agent-plugin/powercontext/skills/powercontext-project-context/` owns the shared entry and workflow
+references. Edit those files directly. `HOST_GUIDANCE` in `src/powercontext/cli/guidance.py` identifies each package
+and its additional resources. Each host owns its `references/host.md`, which records native Scope selection,
+resolver commands, and connection facts. The synchronizer preserves that file instead of copying the portable binding.
+
+```text
+integrations/agent-plugin/powercontext/
+  skills/powercontext-project-context/ -- shared entry and references
+  mcp.json ----------------------------- default MCP declaration
+                 |
+                 v
+scripts/integration_guidance_skills.py <--- HOST_GUIDANCE
+                 |                    <--- host-owned references/host.md
+                 +--> native Skill packages
+                 +--> native MCP declaration formats
+                              |
+                              v
+                     host packaging and installation
+```
+
+`make integration-guidance` copies the shared resources and adapts MCP declarations for Codex, Claude Code,
+WorkBuddy, ZCode, Kimi Code, and MiniMax. Each distribution contains its own checked-in files, so an installed package
+does not depend on another host's package. DSH reads those packaged files to register runtime Skills and their
+resource directories. Evaluation vendors pin immutable shared-source commits for replay.
+
+Skill packages use their actual files and local references for installation checks; no private resource inventory
+file is required. Installers include auxiliary files such as assets and native metadata, even when the entry does
+not link to them. Managed-region updates preserve personal text outside those regions and additional user files.
+
+This shares authored guidance and packaged connection defaults. Runtime endpoints, credentials, tool implementations,
+approval channels, and Scope bindings remain owned by the Server or native adapter. Shared references do not enable
+every described operation on every host; consult `integrations/capabilities.toml` and the active tool catalog.
+Kimi configuration requires the current host-binding reference. If it is missing, configuration fails before writing
+and directs the user to run `powercontext setup kimi-code`. Setup replaces managed regions with the current packaged
+content while preserving personal text outside those regions and existing settings.
+
 ## Host layout
 
 | Hosts | Discoverable entry | Workflow detail |
 | --- | --- | --- |
-| Codex, Claude Code, WorkBuddy, portable Agent Plugin, Pi, OpenCode | `powercontext-project-context` | Local `references/scope-memory.md`, `work-handoff.md`, and `review-publication.md`. |
-| Hermes | `powercontext:powercontext-project-context` | The same three reference domains with Hermes tool names and human Review commands. |
-| MiniMax | `powercontext-project-context` | Existing Scope/Memory, Handoff, Review and HTTP boundary references plus examples. |
-| OpenClaw | `powercontext-project-context` | Packaged Scope/Memory and Handoff references; no inventory or candidate Review capability. |
-| DSH | Runtime `powercontext-project-context` router | Independently registered `powercontext-memory`, `powercontext-handoff`, `powercontext-review`; no filesystem reference dependency. |
+| Codex, Claude Code, WorkBuddy, Kimi Code, portable Agent Plugin, Pi, OpenCode | `powercontext-project-context` | Shared Memory, Handoff, Review, and Experience/Skills references plus host-owned `references/host.md`. |
+| Hermes | `powercontext:powercontext-project-context` | Shared references with native tool names and stricter host policies supplied by the actual catalog and host. |
+| MiniMax | `powercontext-project-context` | Shared workflow references, HTTP boundary guidance, and examples. |
+| OpenClaw | `powercontext-project-context` | Shared references; inventory and candidate Review remain unavailable in the native adapter. |
+| DSH | Runtime `powercontext-project-context` router | Independently registered `powercontext-memory`, `powercontext-handoff`, `powercontext-review`, read from packaged files with directory resource bases. |
 
-File-backed hosts follow MiniMax's existing local-reference organization. Keep references beside the installed entry.
+File-backed hosts ship references beside the installed entry.
 OpenCode's npm archive includes the complete Skill directory. WorkBuddy's installer resolves Python and Scope-helper
 placeholders in all installed Markdown resources. OpenClaw uses the SDK's manifest `skills` directory mechanism.
-DSH uses its existing runtime Skill service, so the host can discover domain descriptions and load one domain directly.
+DSH uses its runtime Skill service to discover and load one domain directly; its published package must retain the
+Skill directory and linked files.
 
 All maintained Skill entries use `powercontext-project-context`, including runtime registration and installation
 paths. There are no alternate entry names. DSH's separately loadable domain Skills keep their domain-specific names.
@@ -51,7 +90,12 @@ and unknown outcomes. Do not invent a diagnosis, repeat an unconfirmed write bli
 
 ## Validation
 
-Run `uv run pytest tests/test_layered_skills.py` to read each shipped entry and reachable reference, check missing-resource diagnostics, and inspect OpenCode/OpenClaw npm archive contents. Installer regressions exercise actual
+Run `make integration-guidance-check` to reject drift in shared copies and MCP declarations, obsolete packaged
+resources, and broken local references. This resource check does not establish native tool availability, approval
+behavior, or resolver execution; host behavior needs separate qualification.
+
+Run `uv run pytest tests/test_layered_skills.py` to inspect OpenCode, OpenClaw, Pi, and DSH npm archives and read their
+reachable Skill references. Installer regressions exercise actual
 OpenCode reference copying and WorkBuddy placeholder expansion. Pi's package test uses its SDK Skill loader. OpenClaw's
 package test invokes `skills list --json` with an isolated profile. DSH's runtime suite verifies model-visible domain
 metadata and loading via the real host `skill` tool. These tests are separate from live-model routing evidence.

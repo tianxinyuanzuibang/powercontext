@@ -250,6 +250,56 @@ def test_configuration_updates_scope_and_preserves_user_settings(kimi_home):
     assert json.loads(registry_path.read_text()) == registry
 
 
+def test_setup_replaces_legacy_guidance_before_reconfiguration(kimi_home):
+    installed = Path(install()["plugin_path"])
+    skill = installed / "skills/powercontext-project-context/SKILL.md"
+    settings = json.loads((installed / "powercontext.json").read_text(encoding="utf-8"))
+    legacy = (
+        "---\n# POWERCONTEXT-GUIDANCE:START\n"
+        "name: powercontext-project-context\ndescription: Previous installed guidance.\n---\n"
+        f"The configured explicit Scope is {json.dumps(settings['scope_id'], ensure_ascii=False)}.\n"
+        "Obsolete instruction: use the previous workflow.\n"
+        "See [Scope and memory](references/scope-memory.md).\n"
+        "<!-- POWERCONTEXT-GUIDANCE:END -->\n"
+    )
+    notes = b"\r\nPersonal instruction: keep the original Scope example.\r\n"
+    skill.write_bytes(legacy.encode("utf-8") + notes)
+    (skill.parent / "references/host.md").unlink()
+
+    before = {path: path.read_bytes() for path in kimi_home.rglob("*") if path.is_file()}
+    result = CliRunner().invoke(create_cli(), ["config", "agent", "kimi-code", "--scope-id", "new-scope", "--json"])
+    assert result.exit_code != 0
+    assert "powercontext setup kimi-code" in result.output
+    assert {path: path.read_bytes() for path in kimi_home.rglob("*") if path.is_file()} == before
+
+    install_plugin("kimi-code", source=str(REPOSITORY))
+    assert notes in skill.read_bytes()
+    assert b"Obsolete instruction: use the previous workflow." not in skill.read_bytes()
+    assert json.loads((installed / "powercontext.json").read_text(encoding="utf-8")) == settings
+
+    result = CliRunner().invoke(
+        create_cli(), ["config", "agent", "kimi-code", "--profile", "full", "--scope-id", "new-scope", "--json"]
+    )
+    assert result.exit_code == 0, result.output
+    settings = json.loads((installed / "powercontext.json").read_text(encoding="utf-8"))
+    assert settings["scope_id"] == "new-scope"
+    assert settings["profile"] == "full"
+    assert notes in skill.read_bytes()
+    tools = json.loads((installed / "kimi.plugin.json").read_text())["mcpServers"]["powercontext"]["enabledTools"]
+    assert "handoff_current_work" in tools
+    assert "approve_candidate" in tools
+
+
+def test_configuration_rejects_incomplete_shared_skill_without_writes(kimi_home):
+    installed = Path(install()["plugin_path"])
+    (installed / "skills/powercontext-project-context/references/host.md").unlink()
+    before = {path: path.read_bytes() for path in kimi_home.rglob("*") if path.is_file()}
+    result = CliRunner().invoke(create_cli(), ["config", "agent", "kimi-code", "--scope-id", "new-scope", "--json"])
+    assert result.exit_code != 0
+    assert "powercontext setup kimi-code" in result.output
+    assert {path: path.read_bytes() for path in kimi_home.rglob("*") if path.is_file()} == before
+
+
 @pytest.mark.parametrize(
     "readiness, old_probe, service_failed, http_status, with_checks",
     [

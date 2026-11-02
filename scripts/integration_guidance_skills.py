@@ -29,11 +29,7 @@ from urllib.parse import unquote, urlsplit
 
 import yaml
 
-from powercontext.cli.guidance import (
-    HOST_GUIDANCE,
-    RESOURCE_MANIFEST,
-    write_if_changed,
-)
+from powercontext.cli.guidance import HOST_GUIDANCE, write_if_changed
 
 ROOT = Path(__file__).resolve().parents[1]
 ENTRY_NAME = "powercontext-project-context"
@@ -85,18 +81,11 @@ def native_mcp(root: Path, host: str) -> tuple[Path, bytes] | None:
 def shared_resources(root: Path = ROOT) -> dict[Path, bytes]:
     """Copy shared resources while retaining each package's native binding description."""
     source = root / HOST_GUIDANCE["agent-plugin"].skill
-    resources = {
-        p.relative_to(source).as_posix(): p.read_bytes()
-        for p in source.rglob("*")
-        if p.is_file() and p.name != RESOURCE_MANIFEST
-    }
+    resources = {p.relative_to(source).as_posix(): p.read_bytes() for p in source.rglob("*") if p.is_file()}
     core = set(file_skill(source)["resources"])
     output = {}
     for host, descriptor in HOST_GUIDANCE.items():
         names = set(resources) if host == "agent-plugin" else core | set(descriptor.extra_resources)
-        output[root / descriptor.skill / RESOURCE_MANIFEST] = (
-            json.dumps({"schema_version": 1, "resources": sorted(names)}, indent=2) + "\n"
-        ).encode()
         for name in sorted(names):
             content = resources[name]
             if name == "references/host.md":

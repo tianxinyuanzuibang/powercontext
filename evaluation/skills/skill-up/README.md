@@ -114,7 +114,7 @@ claim about body consumption; ordinary coding does not require a Skill invocatio
 
 ## Pinning a Skill revision
 
-`vendor/powercontext-project-context` contains the packaged Skill files and its managed-refresh metadata. `skill-lock.json` identifies
+`vendor/powercontext-project-context` contains the packaged Skill files. `skill-lock.json` identifies
 their source commit, individual SHA-256 hashes and an aggregate hash of sorted `<sha256>  <relative-path>\n` lines.
 Vendoring reads immutable Git blobs, and `.gitattributes` keeps the vendor bytes in LF form across platforms.
 

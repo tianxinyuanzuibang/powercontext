@@ -19,7 +19,7 @@ loaded. The existing Skill carries detailed procedures. This implements D of
 | Explicit inventory or audit | List the requested collection; listing is not the usual context-restoration path. |
 | Explicit save for future use | Call the available Memory write and inspect its result before saying saved. |
 | Preview or current-turn instruction | Do not persist it merely because it mentions Memory. |
-| Requested temporary handoff | Capture inspected facts, use exact evidence references, inspect the Draft, and finalize the transfer. Commit only for a requested durable milestone. |
+| Requested temporary handoff | Transfer the complete prepared carrier with exact evidence. The high-level operation captures its own boundary; only a lower-level flow needs Draft inspection and finalization. Commit only for a requested durable milestone. |
 | Candidate inspection | Read the review queue or exact candidate when supported; listing and generation do not approve, install, publish, or execute it. |
 | Failed, denied, unscoped, or unavailable operation | Identify the operation and safe returned reason. Do not invent a cause, simulate an absent tool, substitute another write, or claim success. |
 
@@ -37,12 +37,12 @@ These rules describe result interpretation; error classification follows the
 
 | Host | Guidance surface | Examples and limits |
 | --- | --- | --- |
-| DSH | Registered system section and native tools | `pc_search`, `pc_memory_list`, `pc_remember`; candidate decisions remain human `/pc review` commands. |
-| OpenCode | System transform and native tools | Same `pc_*` names; candidate-review mutations are not model tools. |
+| DSH | Registered system section and native MCP tools | `mcp__powercontext__search_memory`, `mcp__powercontext__list_atomic_memories`, `mcp__powercontext__remember_memory`; native candidate decisions require an explicit user decision on the exact candidate/version and host approval. |
+| OpenCode | System transform and native tools | `pc_search`, `pc_memory_list`, `pc_remember`; candidate-review mutations are not model tools. |
 | Pi | `before_agent_start` system prompt and native tools | Memory, Topic Memory, structured work/Handoff, artifact/candidate inspection, candidate decisions and external Skills. Candidate approve/reject/revise and exact external import/fork require explicit authorization and interactive confirmation; they do not install, publish or execute artifacts. Guidance survives empty or failed automatic recall. |
 | OpenClaw | Memory capability prompt and provider tools | `powercontext_memory_search` / `powercontext_memory_store`; the prompt includes only tools available in the current context. Memory and structured work/Handoff are available when their tools are enabled; inventory and candidate Review are not inferred. |
 | Hermes | Provider system block and schemas | `powercontext_search_memory`, `powercontext_remember`, and supported operation tools; `powercontext:powercontext-project-context` plugin Skill. |
-| Codex, Claude Code, WorkBuddy | MCP initialize instructions and OpenAPI-derived descriptions | `search_memory`, `list_memory_entries`, `remember_memory`; each existing `powercontext-project-context` Skill stays consistent. |
+| Codex, Claude Code, WorkBuddy | MCP initialize instructions and OpenAPI-derived descriptions | `search_memory`, `list_atomic_memories`, `remember_memory`; each `powercontext-project-context` Skill stays consistent. |
 
 The portable Agent Plugin's existing Skill shares these semantics. Framework adapters and the Bub evaluation harness
 are outside this migration. Host names, tool authority, persistence formats, and distribution ownership do not change.
@@ -113,15 +113,18 @@ Pi includes Topic Memory, artifact/candidate inspection, Work Contract, current-
 Task Outcome tools. OpenClaw includes Work Contract and structured Handoff/Outcome tools in eligible private sessions.
 Both retain the host's existing privacy and approval boundaries; candidate inspection never grants approval authority.
 
-Native Handoff evaluation executes the registered DSH, Pi, and OpenCode tool adapters and the built OpenClaw entry
+Native Handoff evaluation executes the registered Pi and OpenCode tool adapters and the built OpenClaw entry
 against controlled HTTP replies. It records the actual request after field selection, default values, generated Source
 identity, and Scope injection, then returns the adapter's real response wrapper. Install package dependencies and build
 OpenClaw first. Use Node 24.15+ for OpenClaw, or set `POWERCONTEXT_GUIDANCE_NODE` to that Node executable. Approval in
 this evaluator is a fixture, not proof of an interactive host approval channel. No real Server writes or generation run.
+DSH uses controlled MCP replies in this evaluator to check argument and result handling; this does not execute or
+qualify the native DSH adapter. SDK catalog export and runtime acceptance are separate checks.
 
-A low-level prepare returns an unfinished Draft. Finalize `prepare.data` or `activate.data.draft`, not the enclosing
-`{ok, data}` response. Return the complete prepared carrier from `finalize.data`. Pi's high-level tool returns
-`data.handoff`; OpenClaw and Hermes return `handoff`. A high-level current-work call captures its own boundary and
+A low-level prepare returns an unfinished Draft. Pi and OpenCode finalize `prepare.data` or `activate.data.draft`,
+not the enclosing `{ok, data}` response, and return the complete carrier from `finalize.data`. DSH native MCP uses
+the top-level activation `draft`, the complete finalization result, and the high-level `handoff` member.
+Pi's high-level tool returns `data.handoff`; OpenClaw and Hermes return `handoff`. A high-level current-work call captures its own boundary and
 needs no preliminary capture or separate finalization. The carrier checker requires all mandatory fields and exact
 Scope, evidence, and receipts. Omitting optional null metadata is allowed by the contract; omitting required `base`
 even when null, changing a citation, or returning only `content` fails.

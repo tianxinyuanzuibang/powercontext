@@ -30,7 +30,7 @@ from shutil import which
 from typing import Any
 from urllib.parse import urlsplit
 
-from powercontext.cli.guidance import guidance_region, preserve_installed_guidance
+from powercontext.cli.guidance import SKILL_DIRECTORY, guidance_region, preserve_installed_guidance
 from powercontext.cli.installation import publish, write_json
 from powercontext.cli.system import Diagnostic, DiagnosticStatus, SetupError
 from powercontext.cli.transport import setup_transport_updates
@@ -117,6 +117,13 @@ def _endpoint(value: str) -> str:
     return endpoint
 
 
+def _binding_file(plugin: Path) -> Path:
+    binding = plugin / SKILL_DIRECTORY / "references/host.md"
+    if not binding.is_file():
+        raise SetupError("Run powercontext setup kimi-code to install complete binding guidance")  # noqa: TRY003
+    return binding
+
+
 def _configured_binding(
     skill: Path,
     *,
@@ -137,8 +144,10 @@ def _configured_binding(
         if "__POWERCONTEXT_SCOPE_JSON__" in content
         else json.dumps(previous_scope, ensure_ascii=False)
     )
-    for label in ("The configured Scope is", "The configured explicit Scope is"):
-        content = content.replace(f"{label} {old_scope}.", f"{label} {json.dumps(scope, ensure_ascii=False)}.")
+    content = content.replace(
+        f"The configured explicit Scope is {old_scope}.",
+        f"The configured explicit Scope is {json.dumps(scope, ensure_ascii=False)}.",
+    )
     content = content.replace("__POWERCONTEXT_SCOPE_SCRIPT_JSON__", json.dumps(str(scope_script), ensure_ascii=False))
     old_profile = (
         "__POWERCONTEXT_PROFILE_JSON__"
@@ -307,7 +316,7 @@ class KimiInstaller:
             server["bearerTokenEnvVar"] = "POWERCONTEXT_KIMI_TOKEN"
         elif server.get("bearerTokenEnvVar") == "POWERCONTEXT_KIMI_TOKEN":
             del server["bearerTokenEnvVar"]
-        skill = destination / "skills/powercontext-project-context/references/host.md"
+        skill = _binding_file(destination)
         content = _configured_binding(
             skill,
             scope=scope,
@@ -371,9 +380,11 @@ class KimiInstaller:
             hooks_ok = manifest.get("hooks") == [HOOK] and all(
                 (destination / name).is_file() for name in REQUIRED_FILES
             )
-            skill_ok = manifest.get("skills") == "./skills/" and manifest.get("sessionStart") == {
-                "skill": "powercontext-project-context"
-            }
+            skill_ok = (
+                manifest.get("skills") == "./skills/"
+                and manifest.get("sessionStart") == {"skill": "powercontext-project-context"}
+                and _binding_file(destination).is_file()
+            )
             checks["skill"] = Diagnostic(
                 ok if skill_ok else failed, "configured" if skill_ok else "Skill is not registered"
             )

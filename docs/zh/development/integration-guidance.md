@@ -18,7 +18,7 @@ PowerContext 的系统指引和工具描述应在 Skill 尚未加载时也能支
 | 明确盘点或审计 | 列出指定集合；list 不作为恢复上下文的常规路径。 |
 | 明确保存供未来使用 | 调用当前可用的 Memory 写入操作，检查结果后才能声称已保存。 |
 | 预览或仅适用于当前轮的指令 | 不因提及 Memory 就执行持久化。 |
-| 临时交接 | 捕获已检查的事实，使用精确证据引用，检查 Draft 后完成传递；只有明确要求持久里程碑才 commit。 |
+| 临时交接 | 传递带精确证据的完整 prepared 载体。高层操作自行记录边界；只有底层流程需要检查 Draft 并 finalize。仅明确要求持久里程碑时 commit。 |
 | 查看候选 | 使用当前宿主支持的队列或候选读取；列出、生成不等于批准、安装、发布或执行。 |
 | 失败、拒绝、未绑定 Scope 或工具不可用 | 说明具体操作和安全的返回原因，不猜测根因、不模拟缺失工具、不替换成其他写入，也不声称成功。 |
 
@@ -33,12 +33,12 @@ Scope 由宿主和 Server 决定。复用解析后的绑定，不猜测身份或
 
 | 宿主 | 指引入口 | 工具与边界 |
 | --- | --- | --- |
-| DSH | 系统段和原生工具 | `pc_search`、`pc_memory_list`、`pc_remember`；候选决策由人工 `/pc review` 完成。 |
-| OpenCode | 系统 transform 和原生工具 | 同类 `pc_*` 名称；候选审核变更不作为模型工具开放。 |
+| DSH | 系统段和原生 MCP 工具 | `mcp__powercontext__search_memory`、`mcp__powercontext__list_atomic_memories`、`mcp__powercontext__remember_memory`；原生候选决策需要用户对准确候选和版本明确授权，并通过宿主审批。 |
+| OpenCode | 系统 transform 和原生工具 | `pc_search`、`pc_memory_list`、`pc_remember`；候选审核变更不作为模型工具开放。 |
 | Pi | `before_agent_start` 系统提示和原生工具 | 支持 Memory、Topic Memory、结构化工作与 Handoff，以及产物/候选检查、候选审核和外部 Skill。候选批准、拒绝、修订及精确外部 Skill 导入/分叉需要显式授权和交互确认，不会安装、发布或执行产物。自动召回为空或失败时仍有基础指引。 |
 | OpenClaw | Memory capability 提示和 provider 工具 | `powercontext_memory_search` / `powercontext_memory_store`；提示按当前目录说明 Memory 与结构化工作/Handoff，不推断 Memory 清单或候选 Review。 |
 | Hermes | provider 系统块和工具 schema | `powercontext_search_memory`、`powercontext_remember` 等实际工具；使用 `powercontext:powercontext-project-context` 插件 Skill。 |
-| Codex、Claude Code、WorkBuddy | MCP 初始化指引和 OpenAPI 派生描述 | `search_memory`、`list_memory_entries`、`remember_memory`；各自现有 `powercontext-project-context` Skill 保持一致。 |
+| Codex、Claude Code、WorkBuddy | MCP 初始化指引和 OpenAPI 派生描述 | `search_memory`、`list_atomic_memories`、`remember_memory`；各自 `powercontext-project-context` Skill 保持一致。 |
 
 可移植 Agent Plugin 的现有 Skill 使用相同语义。框架适配器与 Bub 验证工具不在本次迁移范围；工具权限、持久化格式、
 [分层 Skill 路由](layered-skills.md)在统一的 `powercontext-project-context` 入口下提供各领域的详细流程。
@@ -102,13 +102,16 @@ Pi 的能力包含 Topic Memory、产物和候选读取、Work Contract、当前
 OpenClaw 在符合条件的私密会话中支持 Work Contract 与结构化交接、Outcome。宿主既有的隐私和确认边界保持不变，
 读取候选不授予批准权限。
 
-原生 Handoff 评测执行实际注册的 DSH、Pi、OpenCode 工具适配器及构建后的 OpenClaw 入口，使用受控 HTTP 返回。
+原生 Handoff 评测执行实际注册的 Pi、OpenCode 工具适配器及构建后的 OpenClaw 入口，使用受控 HTTP 返回。
 记录的是经过字段选择、默认值、Source 标识生成和 Scope 注入之后的真实请求，返回值也经过实际适配器包装。
 先安装包依赖并构建 OpenClaw。OpenClaw 需要 Node 24.15+，可通过 `POWERCONTEXT_GUIDANCE_NODE` 指定解释器。
 评测中的授权为 fixture，不能证明真实宿主存在交互确认通道；评测不向真实 Server 写入，也不执行真实生成。
+DSH 在此评测中使用受控 MCP 返回检查参数与结果处理，不执行或证明原生 DSH 适配器行为。
+SDK 工具目录导出和运行时验收是独立检查。
 
-底层 prepare 返回未完成的 Draft。将 `prepare.data` 或 `activate.data.draft` 传给 finalize，不能传整个
-`{ok, data}`。最终返回 `finalize.data` 中的完整载体。Pi 高层交接返回 `data.handoff`，OpenClaw 和 Hermes
+底层 prepare 返回未完成的 Draft。Pi 和 OpenCode 将 `prepare.data` 或 `activate.data.draft` 传给 finalize，
+不能传整个 `{ok, data}`，最终返回 `finalize.data` 中的完整载体。DSH 原生 MCP 使用顶层 activation `draft`、
+完整 finalize 返回以及高层 `handoff` 成员。Pi 高层交接返回 `data.handoff`，OpenClaw 和 Hermes
 返回 `handoff`；高层当前工作交接自行记录边界，不需要先 capture 或再 finalize。载体验证要求全部必填字段，
 并保持 Scope、证据和 receipt 精确一致。契约允许省略值为 null 的可选元数据，但必填的 `base` 即使为 null
 也不能省略；改写引用或只返回 `content` 都会失败。

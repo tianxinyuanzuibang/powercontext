@@ -53,8 +53,8 @@ uv run --locked python -m evaluation.zcode_guidance.pin --revision <committed-re
 ```
 
 The current Skill pin is recorded in `skill-lock.json`. It uses the Atomic Memory and unified Candidate contracts,
-focused text-search guidance, explicit data-workflow routing, and generated markers and metadata. The lock includes
-every packaged Skill file, including `.powercontext-guidance.json`. Offline validation confirms fixture and grader
+focused text-search guidance and explicit data-workflow routing. The lock includes
+every file in the pinned Skill snapshot. Offline validation confirms fixture and grader
 compatibility. A fresh paired live run is required before claiming qualification for this Skill and contract;
 changing the pin alone grants no qualification.
 
@@ -124,9 +124,9 @@ a scripted model.
 ## Recorded live execution
 
 A local paired execution on 2026-10-15 used the CLI commit and version above, provider `zai-api`, model
-`GLM-5.3-Flash`, and the current Skill pin. All 14 user turns completed with native model/tool events and controlled
-MCP evidence. The Skill arm passed 5/5 cases and loaded the Skill body for all four data-workflow cases; ordinary
-coding loaded no Skill and called no tools. The no-Skill arm passed 4/5: its empty-search case issued additional
+`GLM-5.3-Flash`, and Skill pin `860cb38ba49c7faa09877c6f170b8cd06ea674d2`. All 14 user turns completed with native
+model/tool events and controlled MCP evidence. The Skill arm passed 5/5 cases and loaded the Skill body for all four
+data-workflow cases; ordinary coding loaded no Skill and called no tools. The no-Skill arm passed 4/5: its empty-search case issued additional
 queries after empty results. The report qualified the Skill arm under the existing gate, which permits completed
 baseline behavior failures. Archive replay verified the same result. This qualifies the listed cases for this exact
 host, model, Skill and contract; one paired run establishes neither statistical improvement nor official Windows

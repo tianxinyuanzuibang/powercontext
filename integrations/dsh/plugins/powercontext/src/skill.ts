@@ -64,8 +64,9 @@ The low-level flow requires exact returned Source or Artifact citations, not raw
 its inspected facts have no Source reference, call mcp__powercontext__capture_content_source first and use its
 returned source as boundary evidence.
 Use mcp__powercontext__list_candidates / mcp__powercontext__get_candidate to inspect candidates.
-Generated candidates are not approved artifacts. Review decisions belong to the human /pc review command; never
-self-approve, install, publish, or execute a candidate.
+Generated candidates are not approved artifacts. Use available native MCP review tools only for an explicit
+user decision on the exact candidate and current version, and preserve host approval. Never self-approve.
+A review decision does not authorize installation, publication, or execution.
 For requested Experience or Skill synthesis use the native generate_* / get_* / propose_* tools; they create pending
 candidates or read exact approved artifacts according to the Server contract. External Skill tools inspect or import
 candidate material and do not grant installation or execution authority.
