@@ -10,10 +10,6 @@ powercontext setup dsh --source oceanbase/powercontext --ref powercontext-v1.4.1
 ```
 
 `setup dsh` calls `dsh plugin --profile web add`. The model-facing PowerContext surface is registered through DSH's native `@deepseek-ai/dsh-mcp-client`.
-
-Setup also installs the standard `powercontext-project-context` Skill under `$DSH_HOME/skills` (default
-`~/.dsh/skills`). DSH discovers its frontmatter and loads its references through native filesystem tools. Web and
-Desktop share this Skill directory while keeping separate plugin profiles.
 For development, install the CLI/Server and this built plugin from the same checkout and record its commit:
 
 ```bash

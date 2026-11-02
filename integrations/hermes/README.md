@@ -39,16 +39,16 @@ provider. Hermes v0.20.4 or newer is required.
 installation. Use the manual method only for a project-local provider or when
 the PowerContext CLI is not available.
 
-Copy both Hermes plugins into the user plugin directory and the Skill into the native Skill directory:
+Copy both Hermes plugins and the standard Skill:
 
 ```bash
-mkdir -p "${HERMES_HOME:-$HOME/.hermes}/plugins" "${HERMES_HOME:-$HOME/.hermes}/skills"
 cp -R integrations/hermes/plugins/powercontext \
-  "${HERMES_HOME:-$HOME/.hermes}/plugins/powercontext"
+  "$HERMES_HOME/plugins/powercontext"
 cp -R integrations/hermes/plugins/powercontext-command \
-  "${HERMES_HOME:-$HOME/.hermes}/plugins/powercontext-command"
+  "$HERMES_HOME/plugins/powercontext-command"
+mkdir -p "$HERMES_HOME/skills"
 cp -R integrations/hermes/plugins/powercontext/skills/powercontext-project-context \
-  "${HERMES_HOME:-$HOME/.hermes}/skills/powercontext-project-context"
+  "$HERMES_HOME/skills/powercontext-project-context"
 ```
 
 For project-local installation, copy both directories to `.hermes/plugins/`

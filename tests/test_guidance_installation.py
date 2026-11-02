@@ -21,13 +21,13 @@ from pathlib import Path
 
 import pytest
 
-from powercontext.cli import authorization, dsh, hermes
+from powercontext.cli import authorization, hermes
 from powercontext.cli.guidance import HOST_GUIDANCE, SKILL_DIRECTORY
 from powercontext.cli.installation import setup as install_plugin
 from powercontext.cli.system import SetupError
 
 
-@pytest.mark.parametrize("host", ["dsh", "hermes", "workbuddy"])
+@pytest.mark.parametrize("host", ["hermes", "workbuddy"])
 def test_rejected_upgrade_preserves_user_content_and_retry_succeeds(
     host: str, tmp_path: Path, monkeypatch, hermes_activation
 ) -> None:
@@ -47,28 +47,20 @@ def test_rejected_upgrade_preserves_user_content_and_retry_succeeds(
         monkeypatch.setattr(hermes, "get_hermes_version", lambda _executable: "0.20.4")
         installed = home / "plugins/powercontext"
         payload = Path("__init__.py")
-    elif host == "dsh":
-        monkeypatch.setattr(dsh, "dsh_executable", lambda: "dsh")
-        monkeypatch.setattr(dsh, "_run_dsh", lambda *_args, **_kwargs: "id: powercontext-dsh\n")
-        monkeypatch.setattr("powercontext.cli.dsh_transport.read_dsh_settings", lambda **_kwargs: {})
-        installed = source
-        payload = Path("lib/index.js")
     else:
         installed = home
         payload = Path("hooks/workbuddy_powercontext_hook.py")
     install_plugin(host, source=str(checkout), ref="unused")
-    skill_directory = (home if host in {"dsh", "hermes"} else installed) / SKILL_DIRECTORY
-    note = skill_directory / "personal.md"
+    note = home / SKILL_DIRECTORY / "personal.md"
     note.write_bytes(b"Keep my notes\r\n")
-    skill = skill_directory / "SKILL.md"
+    skill = home / SKILL_DIRECTORY / "SKILL.md"
     instructions = b"\r\nKeep my personal instructions.\r\n"
     skill.write_bytes(skill.read_bytes() + instructions)
     before = {p.relative_to(home): p.read_bytes() for p in home.rglob("*") if p.is_file()}
     resource = source / SKILL_DIRECTORY / "references/work-handoff.md"
     original = resource.read_bytes()
     resource.unlink()
-    suffix = b"\n// updated package\n" if host == "dsh" else b"\n# updated package\n"
-    updated_payload = (source / payload).read_bytes() + suffix
+    updated_payload = (source / payload).read_bytes() + b"\n# updated package\n"
     (source / payload).write_bytes(updated_payload)
     with pytest.raises(SetupError):
         install_plugin(host, source=str(checkout), ref="unused")
@@ -76,7 +68,6 @@ def test_rejected_upgrade_preserves_user_content_and_retry_succeeds(
     resource.write_bytes(original)
     install_plugin(host, source=str(checkout), ref="unused")
     install_plugin(host, source=str(checkout), ref="unused")
-    if host != "dsh":
-        assert (installed / payload).read_bytes() == updated_payload
+    assert (installed / payload).read_bytes() == updated_payload
     assert note.read_bytes() == b"Keep my notes\r\n"
     assert skill.read_bytes().endswith(instructions)

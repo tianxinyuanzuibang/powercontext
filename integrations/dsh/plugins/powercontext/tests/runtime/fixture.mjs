@@ -174,15 +174,10 @@ export async function environment({ realModel, fullCatalog = false } = {}) {
       })
       return
     }
-    const skillMatch = JSON.stringify(body.messages).match(/LOAD_PC_SKILL:(powercontext-project-context)/)
-    const fileMatch = JSON.stringify(body.messages).match(/READ_PC_FILE:([A-Za-z0-9_-]+)/)
     const getScope = JSON.stringify(body.messages).includes('RUN_PC_GET_SCOPE')
     const secretWrite = JSON.stringify(body.messages).match(/RUN_PC_SECRET:([a-z_]+)/)?.[1]
-    const toolResults = body.messages.filter(message => message.role === 'tool')
-    const loadSkill = skillMatch && toolResults.length === 0
-    const readFile = fileMatch && toolResults.length === (skillMatch ? 1 : 0)
-    const needsTool = loadSkill || readFile || ((getScope || secretWrite || JSON.stringify(body.messages).includes('RUN_PC_SEARCH'))
-      && toolResults.length === 0)
+    const needsTool = (getScope || secretWrite || JSON.stringify(body.messages).includes('RUN_PC_SEARCH'))
+      && !body.messages.some(message => message.role === 'tool')
     const content = JSON.stringify(body.messages).includes(CANARY) ? CANARY : 'Task completed.'
     const requestedScopeId = scopeIdForModel
     res.writeHead(200, { 'Content-Type': 'text/event-stream' })
@@ -193,11 +188,7 @@ export async function environment({ realModel, fullCatalog = false } = {}) {
     if (needsTool) {
       res.end(chunk({ role: 'assistant', tool_calls: [{
         index: 0, id: 'fixture-search', type: 'function',
-        function: loadSkill
-          ? { name: 'skill', arguments: JSON.stringify({ name: skillMatch[1] }) }
-          : readFile
-          ? { name: 'read', arguments: JSON.stringify({ file_path: Buffer.from(fileMatch[1], 'base64url').toString() }) }
-          : secretWrite
+        function: secretWrite
           ? { name: `mcp__powercontext__${secretWrite}`, arguments: JSON.stringify(secretArguments(secretWrite, requestedScopeId)) }
           : getScope
           ? { name: 'mcp__powercontext__get_scope', arguments: JSON.stringify({ scope_id: requestedScopeId }) }
@@ -336,8 +327,7 @@ export async function environment({ realModel, fullCatalog = false } = {}) {
     const installed = join(dshHome, 'profiles/sdk/node_modules/powercontext-dsh')
     mkdirSync(installed, { recursive: true })
     for (const entry of ['lib', 'package.json', 'cordis.patch.yml', 'skills']) cpSync(join(options.plugin ?? pluginRoot, entry), join(installed, entry), { recursive: true })
-    cpSync(options.skill ?? join(installed, 'skills/powercontext-project-context'),
-      join(dshHome, 'skills/powercontext-project-context'), { recursive: true })
+    cpSync(join(installed, 'skills'), join(dshHome, 'skills'), { recursive: true })
     const patch = join(dshHome, 'test.patch.json')
     const commandAddress = join(dshHome, 'command-address.txt')
     const commandObserver = join(dshHome, 'command-observer.mjs')

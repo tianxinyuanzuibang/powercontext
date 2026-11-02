@@ -446,33 +446,3 @@ test('real DSH enforces the host Scope for native MCP path arguments before disp
     assert.ok(result?.content.includes(env.scopeId))
   } finally { await env.close() }
 })
-
-
-test('real DSH discovers the installed standard Skill and reads its references', { timeout: 240000 }, async () => {
-  const env = await environment()
-  try {
-    const installation = await installIntoHome(env.home, { serverUrl: env.baseUrl })
-    const skill = installation.setup.result.skill_path
-    const entry = readFileSync(join(skill, 'SKILL.md'), 'utf8')
-    const description = entry.match(/^description: (.+)$/m)[1]
-    const { instance, dshHome } = env.harness({}, { plugin: installation.plugin, skill })
-    for (const filename of ['scope-memory.md', 'work-handoff.md', 'review-publication.md']) {
-      const path = join(dshHome, 'skills/powercontext-project-context/references', filename)
-      await instance.run(`LOAD_PC_SKILL:powercontext-project-context READ_PC_FILE:${Buffer.from(path).toString('base64url')}`)
-      const requests = env.modelRequests.filter(request => request.stream)
-      const finalMessages = requests.at(-1).messages
-      const catalog = finalMessages.map(message => typeof message.content === 'string' ? message.content
-        : (message.content ?? []).map(block => block.text ?? '').join('\n')).join('\n')
-      const names = [...catalog.matchAll(/^- `(powercontext-[^`]+)`: /gm)].map(match => match[1])
-      assert.deepEqual([...new Set(names)], ['powercontext-project-context'], 'advertise one standard PowerContext Skill')
-      assert.ok(JSON.stringify(finalMessages).includes(description), 'installed frontmatter must reach the model')
-      const results = finalMessages.filter(message => message.role === 'tool')
-      const body = entry.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '')
-      const heading = body.split('\n').find(line => line.startsWith('# '))
-      assert.ok(results.some(result => JSON.stringify(result).includes(heading)), 'the host Skill tool must load the entry')
-      const reference = readFileSync(path, 'utf8').split('\n').find(line => line.startsWith('# '))
-      assert.ok(results.some(result => JSON.stringify(result).includes(reference)), `the host read tool must load ${filename}`)
-    }
-    await instance.close()
-  } finally { await env.close() }
-})

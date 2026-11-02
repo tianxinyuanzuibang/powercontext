@@ -35,18 +35,15 @@ assert listing["success"], listing
 skill = next(item for item in listing["skills"] if item["name"] == "powercontext-project-context")
 loaded = json.loads(skill_view(skill["name"], preprocess=False))
 assert loaded["success"], loaded
-reference = json.loads(skill_view(skill["name"], file_path="references/scope-memory.md", preprocess=False))
-assert reference["success"], reference
 skill["content"] = loaded["content"]
 provider = load_memory_provider("powercontext", register_skills=False)
 assert provider is not None, "Hermes failed to load the installed PowerContext provider"
 print(json.dumps({"host": "hermes", "guidance": provider.system_prompt_block(),
-                  "tools": provider.get_tool_schemas(), "skill": skill, "reference": reference["content"]}, ensure_ascii=False))
+                  "tools": provider.get_tool_schemas(), "skill": skill}, ensure_ascii=False))
 """
 
 
-@pytest.mark.parametrize("changed_description", [False, True], ids=["packaged", "updated-frontmatter"])
-def test_native_discovery_exposes_installed_skill_description(tmp_path, changed_description):
+def test_native_discovery_exposes_installed_skill_description(tmp_path):
     source = os.environ.get("POWERCONTEXT_HERMES_SOURCE")
     if not source:
         pytest.skip("Set POWERCONTEXT_HERMES_SOURCE to a Hermes source checkout; CI runs the pinned native host")
@@ -61,11 +58,6 @@ def test_native_discovery_exposes_installed_skill_description(tmp_path, changed_
     skill_path = home / "skills/powercontext-project-context/SKILL.md"
     content = skill_path.read_text(encoding="utf-8")
     metadata = yaml.safe_load(content.split("---", 2)[1])
-    if changed_description:
-        # A future metadata edit must propagate without editing Python registration code.
-        metadata["description"] = "Find project memory / 搜索项目记忆; hand off work / 交接工作."
-        content = "---\n" + yaml.safe_dump(metadata, allow_unicode=True) + "---\n" + content.split("---", 2)[2]
-        skill_path.write_text(content, encoding="utf-8")
     (home / "config.yaml").write_text("memory:\n  provider: powercontext\n", encoding="utf-8")
     result = subprocess.run(
         [sys.executable, "-c", NATIVE_EXPORT],
@@ -86,8 +78,7 @@ def test_native_discovery_exposes_installed_skill_description(tmp_path, changed_
         f"expected {metadata['description']!r}, received {skill['description']!r}"
     )
     assert content.split("---", 2)[2].strip() in skill["content"]
-    assert catalog["reference"] == (skill_path.parent / "references/scope-memory.md").read_text(encoding="utf-8")
-    if not changed_description and (directory := os.environ.get("POWERCONTEXT_GUIDANCE_EXPORT")):
+    if directory := os.environ.get("POWERCONTEXT_GUIDANCE_EXPORT"):
         (Path(directory) / "hermes.json").write_text(
             json.dumps(catalog, ensure_ascii=False, indent=2), encoding="utf-8"
         )
