@@ -1,9 +1,8 @@
 {
   "schema_version": 1,
   "source_path": "integrations/agent-plugin/powercontext/skills/powercontext-project-context",
-  "source_commit": "c56ceaebe4d416eb18bc2bbdf27f0ab65ea91ff9",
+  "source_commit": "ef8eae9cb2bec024cbbed5b6e28e395640e2c3fc",
   "files": {
-    ".powercontext-guidance.json": "c2a329bb471eb4be441315e56d4c4ff1bd1a2f3229cb2e27a7d6b7648ddba51b",
     "SKILL.md": "a09181268930db29b21faa4ffe75c6c5e6971bf7c0666f485e7e467216c16cba",
     "agents/openai.yaml": "2500c7e1d329158214626d203c70e7e9975f6ce7273be7fd4e758cbe4320bdbb",
     "references/examples.json": "3af536b88e12f0c0285c94c339e230dfa78b130b720f0e0a01b3086aa2255a1a",
@@ -15,5 +14,5 @@
     "references/scope-memory.md": "515a2e8c32f8f705a1a282b166079facf7038c52711993069e4ee891f99d7f93",
     "references/work-handoff.md": "c85607e46b747c3d54443f1afce46dc9f5ea6a923b0e2e23287b1eda050ec32c"
   },
-  "content_sha256": "8b538bb11d11dabcd22f68a9cd0a9b229e7c185ec21dbfe70d0098be59250fb1"
+  "content_sha256": "5786d8b40d053c17d882631bd37cfff56eb3b47dbde76e3fcf40a8cb4e228048"
 }
