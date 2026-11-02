@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "source_path": "integrations/agent-plugin/powercontext/skills/powercontext-project-context",
-  "source_commit": "dc4f6db1fdf8412dcbc19fc56772509ac1c2fad4",
+  "source_commit": "55009e6f769229d3d56e215c4e608f51971da83f",
   "files": {
-    "SKILL.md": "a09181268930db29b21faa4ffe75c6c5e6971bf7c0666f485e7e467216c16cba",
+    "SKILL.md": "12ac445806dd9ad77b8cd998b5e3f6a9dae14ab216899e2b4ce91f96f60b45bc",
     "agents/openai.yaml": "2500c7e1d329158214626d203c70e7e9975f6ce7273be7fd4e758cbe4320bdbb",
     "references/examples.json": "3af536b88e12f0c0285c94c339e230dfa78b130b720f0e0a01b3086aa2255a1a",
-    "references/experience-skill.md": "25ce3e78264aea9de0d6298c6b3e4e0965897b3459185366e9c83c35627e5d73",
-    "references/experience-skills.md": "81c2a0675d7525182783412c76f5d0b893d4ce2f3a7298f8b460d09f1f629df4",
-    "references/host.md": "b3018355f3c002644aed144461417823fd6ee463e08823bc73532d1b07029e54",
+    "references/experience-skill.md": "2a5a91ef18f0d911d34ec3190a13d90cb43f0f685c3d19425b76c03335b401ec",
+    "references/experience-skills.md": "4064752f63cdc55e450ebbf6bcc42b62877d427c099d4da47b59bdf235e6983c",
+    "references/host.md": "f16d33081061ebe49416afe986fee249b68f3cf9cce419e3fd370d8363f24561",
     "references/http-boundaries.md": "c012a88b6fb96f5a2e9cfbb6d39a8c9ce897451c4ff3d10f38c7471340ace7e7",
-    "references/review-publication.md": "e796ffcb2ffb7fef1d17c2e356104a44c3797603e74ae7f27a9445f556529621",
-    "references/scope-memory.md": "515a2e8c32f8f705a1a282b166079facf7038c52711993069e4ee891f99d7f93",
-    "references/work-handoff.md": "c85607e46b747c3d54443f1afce46dc9f5ea6a923b0e2e23287b1eda050ec32c"
+    "references/review-publication.md": "8f97c758e0877e38a542afaeb2c6ec33ae7a17fce86210efb6cd0e0e14148393",
+    "references/scope-memory.md": "cc5913a3c726c71463e1de0f606acc210b78f452d14a0b2385b66c3fdafdbb39",
+    "references/work-handoff.md": "4e7b79c5bdee660b1178416e9d42b2f34871d6cc331ac30529b92271215185c2"
   },
-  "content_sha256": "5786d8b40d053c17d882631bd37cfff56eb3b47dbde76e3fcf40a8cb4e228048"
+  "content_sha256": "98f574fcdf13cbe49f14ec42286350fad182615ef046c3371476ab2e9ab94b7d"
 }
