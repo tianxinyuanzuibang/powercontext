@@ -106,7 +106,7 @@ RULES = tomllib.loads((ROOT / ".github/ci-paths.toml").read_text(encoding="utf-8
         ),
         (
             ["integrations/agent-plugin/powercontext/skills/powercontext-project-context/SKILL.md"],
-            {"tests", "dify", "hermes", "dsh", "pi", "opencode", "openclaw", "zcode", "kimi"},
+            {"tests", "dify", "hermes", "dsh", "pi", "opencode", "openclaw", "zcode", "kimi", "skill_guidance"},
         ),
     ],
 )

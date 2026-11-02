@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source_path": "integrations/agent-plugin/powercontext/skills/powercontext-project-context",
-  "source_commit": "ef8eae9cb2bec024cbbed5b6e28e395640e2c3fc",
+  "source_commit": "dc4f6db1fdf8412dcbc19fc56772509ac1c2fad4",
   "files": {
     "SKILL.md": "a09181268930db29b21faa4ffe75c6c5e6971bf7c0666f485e7e467216c16cba",
     "agents/openai.yaml": "2500c7e1d329158214626d203c70e7e9975f6ce7273be7fd4e758cbe4320bdbb",

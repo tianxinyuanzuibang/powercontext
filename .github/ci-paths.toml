@@ -124,7 +124,7 @@ seekdb_lock = [
 ]
 skill_guidance = [
   "evaluation/skills/skill-up/**",
-  "integrations/claude-code/plugins/powercontext/skills/powercontext-project-context/**",
+  "integrations/agent-plugin/powercontext/skills/powercontext-project-context/**",
   ".github/workflows/skill-guidance.yml",
 ]
 
