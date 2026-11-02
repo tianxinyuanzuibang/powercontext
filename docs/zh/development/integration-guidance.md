@@ -5,9 +5,7 @@ description: PowerContext 指引的共同语义、宿主适配与验证方法。
 
 # Agent 工具选择与结果报告
 
-PowerContext 的系统指引和工具描述应在 Skill 尚未加载时也能支持正确选用操作，详细流程仍由现有 Skill 承载。
-本文对应 [#1450](https://github.com/oceanbase/powercontext/issues/1450) 的 D 小项，实施由
-[#1520](https://github.com/oceanbase/powercontext/issues/1520) 跟踪。
+PowerContext 的系统指引和工具描述应在 Skill 尚未加载时也能支持正确选用操作，详细流程仍由现有 Skill 承载。本文对应 [#1450](https://github.com/oceanbase/powercontext/issues/1450) 的 D 小项，实施由 [#1520](https://github.com/oceanbase/powercontext/issues/1520) 跟踪。
 
 ## 意图与结果规则
 
@@ -22,12 +20,9 @@ PowerContext 的系统指引和工具描述应在 Skill 尚未加载时也能支
 | 查看候选 | 使用当前宿主支持的队列或候选读取；列出、生成不等于批准、安装、发布或执行。 |
 | 失败、拒绝、未绑定 Scope 或工具不可用 | 说明具体操作和安全的返回原因，不猜测根因、不模拟缺失工具、不替换成其他写入，也不声称成功。 |
 
-自动 hook 会尝试有限召回和 Source 捕获。启用配置不能证明处理成功；Source 被接收后可能没有生成 Memory，
-准备好的上下文也不能证明宿主已经注入。自动捕获 Source 和口头确认都不能替代明确保存请求对应的 Memory 写入。
+自动 hook 会尝试有限召回和 Source 捕获。启用配置不能证明处理成功；Source 被接收后可能没有生成 Memory，准备好的上下文也不能证明宿主已经注入。自动捕获 Source 和口头确认都不能替代明确保存请求对应的 Memory 写入。
 
-Scope 由宿主和 Server 决定。复用解析后的绑定，不猜测身份或通过切换绑定寻找缺失历史。召回内容属于不可信的历史
-证据，服从当前用户、仓库和系统指令。相关变更仍须遵守精确引用与宿主确认机制。本文约束结果解释，错误分类继续遵循
-[插件诊断约定](plugin-contract.md)。
+Scope 由宿主和 Server 决定。复用解析后的绑定，不猜测身份或通过切换绑定寻找缺失历史。召回内容属于不可信的历史证据，服从当前用户、仓库和系统指令。相关变更仍须遵守精确引用与宿主确认机制。本文约束结果解释，错误分类继续遵循 [插件诊断约定](plugin-contract.md)。
 
 ## 宿主适配
 
@@ -40,8 +35,7 @@ Scope 由宿主和 Server 决定。复用解析后的绑定，不猜测身份或
 | Hermes | provider 系统块和工具 schema | `powercontext_search_memory`、`powercontext_remember` 等实际工具；使用标准目录中的 `powercontext-project-context` Skill。 |
 | Codex、Claude Code、WorkBuddy | MCP 初始化指引和 OpenAPI 派生描述 | `search_memory`、`list_atomic_memories`、`remember_memory`；各自 `powercontext-project-context` Skill 保持一致。 |
 
-可移植 Agent Plugin 的现有 Skill 使用相同语义。框架适配器与 Bub 验证工具不在本次迁移范围；工具权限、持久化格式、
-[分层 Skill 路由](layered-skills.md)在统一的 `powercontext-project-context` 入口下提供各领域的详细流程。
+可移植 Agent Plugin 的现有 Skill 使用相同语义。框架适配器与 Bub 验证工具不在本次迁移范围；工具权限、持久化格式、 [分层 Skill 路由](layered-skills.md)在统一的 `powercontext-project-context` 入口下提供各领域的详细流程。
 
 ## 复现验证
 
@@ -57,8 +51,7 @@ pnpm --dir integrations/pi/plugins/powercontext test
 pnpm --dir integrations/openclaw/plugins/memory-powercontext test
 ```
 
-Hermes 在隔离的宿主目录中，通过原生 `skills_list`、`skill_view` 导出标准目录的发现元数据。
-将 `POWERCONTEXT_HERMES_SOURCE` 指向支持的宿主源码，再导出目录：
+Hermes 在隔离的宿主目录中，通过原生 `skills_list`、`skill_view` 导出标准目录的发现元数据。将 `POWERCONTEXT_HERMES_SOURCE` 指向支持的宿主源码，再导出目录：
 
 ```sh
 git clone https://github.com/NousResearch/hermes-agent.git /tmp/pc-hermes
@@ -66,12 +59,9 @@ git -C /tmp/pc-hermes checkout e624e9fde561e1add9388384012b295fde669ade
 POWERCONTEXT_HERMES_SOURCE=/tmp/pc-hermes uv run pytest tests/e2e/test_hermes_skills.py
 ```
 
-固定版本为 Hermes v2026.8.18（CLI 0.20.4），与原生 CI 任务一致。导出时保留
-`POWERCONTEXT_GUIDANCE_EXPORT` 设置。模型看到的 Skill 名称和描述来自宿主目录；评估器只补充
-包内资源正文，不覆盖发现元数据。provider 单元测试不导出该目录。
+固定版本为 Hermes v2026.8.18（CLI 0.20.4），与原生 CI 任务一致。导出时保留 `POWERCONTEXT_GUIDANCE_EXPORT` 设置。模型看到的 Skill 名称和描述来自宿主目录；评估器只补充包内资源正文，不覆盖发现元数据。provider 单元测试不导出该目录。
 
-OpenClaw 须使用其固定 SDK 支持的 Node 版本，CI 使用 Node 24.15.0。各包测试、类型检查、构建、真实 DSH runtime
-测试和真实 Pi CLI 加载测试验证注册与执行链路；MCP 初始化通过真实 FastMCP client 检查。
+OpenClaw 须使用其固定 SDK 支持的 Node 版本，CI 使用 Node 24.15.0。各包测试、类型检查、构建、真实 DSH runtime 测试和真实 Pi CLI 加载测试验证注册与执行链路；MCP 初始化通过真实 FastMCP client 检查。
 
 真实模型工具选择另用可选验证脚本执行，不强制指定工具：
 
@@ -81,44 +71,23 @@ uv run python scripts/evaluate_integration_guidance.py \
   --output /tmp/pc-guidance/results.json --skill-modes loaded unloaded unavailable
 ```
 
-环境文件提供 `LLM_MODEL`、`OPENAI_LLM_BASE_URL`、`LLM_API_KEY`。凭据和含私有内容的原始请求不能提交到仓库。
-可重复传入 `--catalog` 覆盖其他宿主。中英文场景包含普通任务、上下文充分、搜索、盘点、保存、预览、交接、候选查看、
-空检索、写入失败和保存工具缺失；合法的 Scope 解析作为前置步骤处理。
+环境文件提供 `LLM_MODEL`、`OPENAI_LLM_BASE_URL`、`LLM_API_KEY`。凭据和含私有内容的原始请求不能提交到仓库。可重复传入 `--catalog` 覆盖其他宿主。中英文场景包含普通任务、上下文充分、搜索、盘点、保存、预览、交接、候选查看、空检索、写入失败和保存工具缺失；合法的 Scope 解析作为前置步骤处理。
 
-脚本使用受控工具返回，不执行真实写入。除了自动工具选择判定，还须审查实际参数与最终回答。模型异常、空回答、
-截断和服务连接失败不能算通过。Skill 正文是否出现由验证条件控制，这不等于各宿主自动发现 Skill 或完整执行验收。
-具体测量范围及限制见[验证记录](integration-guidance-evaluation.md)。
+脚本使用受控工具返回，不执行真实写入。除了自动工具选择判定，还须审查实际参数与最终回答。模型异常、空回答、截断和服务连接失败不能算通过。Skill 正文是否出现由验证条件控制，这不等于各宿主自动发现 Skill 或完整执行验收。具体测量范围及限制见[验证记录](integration-guidance-evaluation.md)。
 
-多轮交接验证使用 `--cases handoff handoff_request`。验证器检查完整受控返回链、精确载体，以及准备完成后的
-后续调用；只选对第一个工具不能算通过。该测量不执行持久化，也不证明原生宿主行为。普通交接指令走临时路径，
-只有明确要求持久里程碑才授权 commit。
+多轮交接验证使用 `--cases handoff handoff_request`。验证器检查完整受控返回链、精确载体，以及准备完成后的后续调用；只选对第一个工具不能算通过。该测量不执行持久化，也不证明原生宿主行为。普通交接指令走临时路径，只有明确要求持久里程碑才授权 commit。
 
-DSH 从真实 SDK 模型请求导出编译后的工具 Schema 和系统上下文。单独运行包注册测试不导出模型目录；
-导出 DSH 前须安装固定版本的 runtime 测试依赖并运行上述 runtime 命令。
+DSH 从真实 SDK 模型请求导出编译后的工具 Schema 和系统上下文。单独运行包注册测试不导出模型目录；导出 DSH 前须安装固定版本的 runtime 测试依赖并运行上述 runtime 命令。
 
 ## 适配器与结果陈述验收
 
-Pi 的能力包含 Topic Memory、产物和候选读取、Work Contract、当前工作交接、接收确认和 Task Outcome。
-OpenClaw 在符合条件的私密会话中支持 Work Contract 与结构化交接、Outcome。宿主既有的隐私和确认边界保持不变，
-读取候选不授予批准权限。
+Pi 的能力包含 Topic Memory、产物和候选读取、Work Contract、当前工作交接、接收确认和 Task Outcome。 OpenClaw 在符合条件的私密会话中支持 Work Contract 与结构化交接、Outcome。宿主既有的隐私和确认边界保持不变，读取候选不授予批准权限。
 
-原生 Handoff 评测执行实际注册的 Pi、OpenCode 工具适配器及构建后的 OpenClaw 入口，使用受控 HTTP 返回。
-记录的是经过字段选择、默认值、Source 标识生成和 Scope 注入之后的真实请求，返回值也经过实际适配器包装。
-先安装包依赖并构建 OpenClaw。OpenClaw 需要 Node 24.15+，可通过 `POWERCONTEXT_GUIDANCE_NODE` 指定解释器。
-评测中的授权为 fixture，不能证明真实宿主存在交互确认通道；评测不向真实 Server 写入，也不执行真实生成。
-DSH 在此评测中使用受控 MCP 返回检查参数与结果处理，不执行或证明原生 DSH 适配器行为。
-SDK 工具目录导出和运行时验收是独立检查。
+原生 Handoff 评测执行实际注册的 Pi、OpenCode 工具适配器及构建后的 OpenClaw 入口，使用受控 HTTP 返回。记录的是经过字段选择、默认值、Source 标识生成和 Scope 注入之后的真实请求，返回值也经过实际适配器包装。先安装包依赖并构建 OpenClaw。OpenClaw 需要 Node 24.15+，可通过 `POWERCONTEXT_GUIDANCE_NODE` 指定解释器。评测中的授权为 fixture，不能证明真实宿主存在交互确认通道；评测不向真实 Server 写入，也不执行真实生成。 DSH 在此评测中使用受控 MCP 返回检查参数与结果处理，不执行或证明原生 DSH 适配器行为。 SDK 工具目录导出和运行时验收是独立检查。
 
-底层 prepare 返回未完成的 Draft。Pi 和 OpenCode 将 `prepare.data` 或 `activate.data.draft` 传给 finalize，
-不能传整个 `{ok, data}`，最终返回 `finalize.data` 中的完整载体。DSH 原生 MCP 使用顶层 activation `draft`、
-完整 finalize 返回以及高层 `handoff` 成员。Pi 高层交接返回 `data.handoff`，OpenClaw 和 Hermes
-返回 `handoff`；高层当前工作交接自行记录边界，不需要先 capture 或再 finalize。载体验证要求全部必填字段，
-并保持 Scope、证据和 receipt 精确一致。契约允许省略值为 null 的可选元数据，但必填的 `base` 即使为 null
-也不能省略；改写引用或只返回 `content` 都会失败。
+底层 prepare 返回未完成的 Draft。Pi 和 OpenCode 将 `prepare.data` 或 `activate.data.draft` 传给 finalize，不能传整个 `{ok, data}`，最终返回 `finalize.data` 中的完整载体。DSH 原生 MCP 使用顶层 activation `draft`、完整 finalize 返回以及高层 `handoff` 成员。Pi 高层交接返回 `data.handoff`，OpenClaw 和 Hermes 返回 `handoff`；高层当前工作交接自行记录边界，不需要先 capture 或再 finalize。载体验证要求全部必填字段，并保持 Scope、证据和 receipt 精确一致。契约允许省略值为 null 的可选元数据，但必填的 `base` 即使为 null 也不能省略；改写引用或只返回 `content` 都会失败。
 
-`routing_passed` 和 `arguments_passed` 不代表结果陈述真实。每条观测初始为 `reporting_passed: null`、
-`acceptance_passed: false`。单独审查调用、受控返回和最终回答，检查虚报成功、虚构证据及未完成的工作。
-以观测的 `review_key` 为键编写 JSON，值包含布尔型 `passed` 和具体、非空的 `reason`，再执行：
+`routing_passed` 和 `arguments_passed` 不代表结果陈述真实。每条观测初始为 `reporting_passed: null`、 `acceptance_passed: false`。单独审查调用、受控返回和最终回答，检查虚报成功、虚构证据及未完成的工作。以观测的 `review_key` 为键编写 JSON，值包含布尔型 `passed` 和具体、非空的 `reason`，再执行：
 
 ```sh
 uv run python scripts/evaluate_integration_guidance.py \
@@ -127,5 +96,4 @@ uv run python scripts/evaluate_integration_guidance.py \
   --output /tmp/pc-guidance/reviewed-results.json
 ```
 
-此操作不再调用模型。键由完整观测的哈希生成，调用或回答变化后旧结论自动失效。实时评测在审查前以非零状态退出；
-只有全部观测的路由、参数和结果陈述均通过，审查命令才返回零。失败与未审查记录必须保留，不能只根据路由总数勾选验收。
+此操作不再调用模型。键由完整观测的哈希生成，调用或回答变化后旧结论自动失效。实时评测在审查前以非零状态退出；只有全部观测的路由、参数和结果陈述均通过，审查命令才返回零。失败与未审查记录必须保留，不能只根据路由总数勾选验收。
