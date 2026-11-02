@@ -35,7 +35,8 @@ scripts/integration_guidance_skills.py <--- HOST_GUIDANCE
 
 `make integration-guidance` 复制公共资源，并为 Codex、Claude Code、WorkBuddy、ZCode、Kimi Code 和 MiniMax
 转换 MCP 声明。各发行包仍包含独立且纳入版本控制的文件，安装后不依赖其他宿主的包。
-DSH 从这些打包文件读取内容，注册运行时 Skill 和资源目录。评估副本固定公共源的不可变提交，用于回放。
+DSH 和 Hermes setup 将 Skill 安装到宿主的标准目录，由宿主读取 frontmatter 发现入口，并按需加载参考文件。
+评估副本固定公共源的不可变提交，用于回放。
 
 Skill 包根据实际文件和本地引用进行安装检查，不要求私有资源清单文件。安装器会携带资产和原生元数据等
 未被入口链接的辅助文件。更新受管理区域时，保留区域外的个人文本及用户附加文件。
@@ -50,18 +51,19 @@ Skill 包根据实际文件和本地引用进行安装检查，不要求私有�
 | 宿主 | 可发现入口 | 详细流程 |
 | --- | --- | --- |
 | Codex、Claude Code、WorkBuddy、Kimi Code、可移植 Agent Plugin、Pi、OpenCode | `powercontext-project-context` | 公共 Memory、Handoff、Review、Experience/Skills 参考文件，以及宿主自有的 `references/host.md`。 |
-| Hermes | `powercontext:powercontext-project-context` | 公共参考文件；实际目录和宿主提供原生工具名与更严格的宿主策略。 |
+| Hermes | `powercontext-project-context` | 安装到 `$HERMES_HOME/skills`，通过原生目录发现和引用读取加载。 |
 | MiniMax | `powercontext-project-context` | 公共流程参考、HTTP 边界说明和示例。 |
 | OpenClaw | `powercontext-project-context` | 公共参考文件；原生适配器仍不支持盘点和候选 Review。 |
-| DSH | 运行时 `powercontext-project-context` 路由 | 从打包文件读取内容，独立注册 `powercontext-memory`、`powercontext-handoff`、`powercontext-review`，并提供资源目录。 |
+| DSH | `powercontext-project-context` | 安装到 `$DSH_HOME/skills`，通过原生文件系统发现、Skill 加载和文件读取使用。 |
 
 文件型宿主将参考文件随入口一起安装。OpenCode 的 npm 包包含完整 Skill 目录；
 WorkBuddy 安装器替换所有已安装 Markdown 中的 Python 和 Scope helper 占位符；OpenClaw 使用 SDK 的 manifest
-`skills` 目录机制。DSH 复用运行时 Skill 服务，让宿主发现领域描述并直接加载单个领域；发布包必须保留
-Skill 目录和链接引用的文件。
+`skills` 目录机制。DSH 和 Hermes 安装器将完整 Skill 目录复制到原生用户 Skill 根目录。DSH Web 与 Desktop
+共用这份 Skill，但保留各自的插件 profile。Hermes 的 Skill 发现不依赖当前选择的 Memory provider；实际工具
+可用性和权限仍以当前宿主目录为准。
 
-各宿主的 Skill 入口、运行时注册和安装路径统一使用 `powercontext-project-context`，不提供其他入口别名。
-DSH 可独立加载的领域 Skill 保留各自的领域名称。框架适配器和 Bub 不提供这些 Skill 入口。
+各宿主的 Skill 入口和安装路径统一使用 `powercontext-project-context`，流程参考文件保留在该 Skill 内。
+框架适配器和 Bub 不提供这些 Skill 入口。
 
 ## 流程边界
 
@@ -84,7 +86,8 @@ Skill 缺失不影响已有完整工具指引。参考文件缺失时说明精�
 
 `uv run pytest tests/test_layered_skills.py` 检查 OpenCode、OpenClaw、Pi 和 DSH 的 npm 包，读取其中可达的
 Skill 参考文件。安装器回归实际执行 OpenCode 参考文件复制和 WorkBuddy 占位符替换。Pi 包测试调用 SDK Skill 加载器；
-OpenClaw 包测试在隔离配置中执行 `skills list --json`；DSH runtime 测试检查模型可见领域描述并通过真实 `skill` 工具加载。
+OpenClaw 包测试在隔离配置中执行 `skills list --json`；DSH runtime 测试检查标准目录发现、模型可见 frontmatter、
+真实 `skill` 工具加载和引用读取。Hermes 验收通过原生 `skills_list`、`skill_view` 验证目录工作流。
 这些测试与模型路由证据分别记录。
 
 按[工具路由验证](integration-guidance.md)导出目录，再启用可选资源读取：

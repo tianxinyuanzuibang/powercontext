@@ -41,7 +41,7 @@ These rules describe result interpretation; error classification follows the
 | OpenCode | System transform and native tools | `pc_search`, `pc_memory_list`, `pc_remember`; candidate-review mutations are not model tools. |
 | Pi | `before_agent_start` system prompt and native tools | Memory, Topic Memory, structured work/Handoff, artifact/candidate inspection, candidate decisions and external Skills. Candidate approve/reject/revise and exact external import/fork require explicit authorization and interactive confirmation; they do not install, publish or execute artifacts. Guidance survives empty or failed automatic recall. |
 | OpenClaw | Memory capability prompt and provider tools | `powercontext_memory_search` / `powercontext_memory_store`; the prompt includes only tools available in the current context. Memory and structured work/Handoff are available when their tools are enabled; inventory and candidate Review are not inferred. |
-| Hermes | Provider system block and schemas | `powercontext_search_memory`, `powercontext_remember`, and supported operation tools; `powercontext:powercontext-project-context` plugin Skill. |
+| Hermes | Provider system block and schemas | `powercontext_search_memory`, `powercontext_remember`, and supported operation tools; `powercontext-project-context` standard directory Skill. |
 | Codex, Claude Code, WorkBuddy | MCP initialize instructions and OpenAPI-derived descriptions | `search_memory`, `list_atomic_memories`, `remember_memory`; each `powercontext-project-context` Skill stays consistent. |
 
 The portable Agent Plugin's existing Skill shares these semantics. Framework adapters and the Bub evaluation harness
@@ -63,7 +63,7 @@ pnpm --dir integrations/pi/plugins/powercontext test
 pnpm --dir integrations/openclaw/plugins/memory-powercontext test
 ```
 
-Hermes exports discovery metadata through its native provider loader and `PluginManager`, using an isolated
+Hermes exports standard-directory discovery metadata through native `skills_list` and `skill_view`, using an isolated
 Hermes home. Point `POWERCONTEXT_HERMES_SOURCE` at the supported host checkout, then export the catalog:
 
 ```sh

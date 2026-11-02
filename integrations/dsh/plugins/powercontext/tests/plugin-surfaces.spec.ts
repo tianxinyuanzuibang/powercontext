@@ -19,10 +19,8 @@ import { PowerContextClient } from '../src/client.ts'
 import { registerCommands } from '../src/commands.ts'
 import { resolveConfig } from '../src/config.ts'
 import { requireService } from '../src/dsh-service.ts'
-import { inject } from '../src/index.ts'
 import type { PluginRuntime } from '../src/invoke.ts'
-import { GUIDANCE, registerGuidance, registerSkill } from '../src/skill.ts'
-import { PROJECT_CONTEXT_SKILL } from '../src/skill-body.ts'
+import { GUIDANCE, registerGuidance } from '../src/guidance.ts'
 
 function runtime(): PluginRuntime {
   const config = resolveConfig({ baseUrl: 'http://127.0.0.1:8000' })
@@ -33,12 +31,6 @@ function runtime(): PluginRuntime {
     log: () => undefined,
   }
 }
-
-describe('plugin inject contract', () => {
-  it('declares every DSH service the plugin registers against', () => {
-    expect(inject).toEqual(['tools', 'agents', 'commands', 'skills', 'systemPrompt'])
-  })
-})
 
 describe('requireService', () => {
   it('returns the named service when present', () => {
@@ -66,48 +58,6 @@ describe('registerCommands', () => {
     }, runtime())
     expect(registered.map((item) => item.name)).toEqual(['pc'])
     expect(registered[0]).toHaveProperty('input.hint', expect.any(String))
-  })
-})
-
-describe('registerSkill', () => {
-  it('fails loudly when the skills service is missing', () => {
-    expect(() => registerSkill({ get: () => undefined })).toThrow(/skills/)
-  })
-
-  it('registers powercontext-project-context when the skills service is present', () => {
-    const registered: Array<{ name: string; content: string; source: string }> = []
-    registerSkill({
-      get: (name) => name === 'skills'
-        ? { register: (skill: { name: string; content: string; source: string }) => registered.push(skill) }
-        : undefined,
-    })
-    expect(registered).toEqual(expect.arrayContaining([expect.objectContaining({
-      name: 'powercontext-project-context',
-      source: 'runtime',
-      content: PROJECT_CONTEXT_SKILL,
-    })]))
-  })
-})
-
-describe('plugin surface mount', () => {
-  it('registers /pc, skill, and guidance together when all services exist', () => {
-    const commands: Array<{ name: string }> = []
-    const skills: Array<{ name: string }> = []
-    const sections: Array<{ name: string }> = []
-    const ctx = {
-      get: (name: string) => {
-        if (name === 'commands') return { register: (definition: { name: string }) => commands.push(definition) }
-        if (name === 'skills') return { register: (skill: { name: string }) => skills.push(skill) }
-        if (name === 'systemPrompt') return { section: (section: { name: string }) => sections.push(section) }
-        return undefined
-      },
-    }
-    registerCommands(ctx, runtime())
-    registerSkill(ctx)
-    registerGuidance(ctx)
-    expect(commands.map((item) => item.name)).toEqual(['pc'])
-    expect(new Set(skills.map((item) => item.name))).toEqual(new Set(['powercontext-project-context', 'powercontext-memory', 'powercontext-handoff', 'powercontext-review']))
-    expect(sections.map((item) => item.name)).toEqual(['tool:powercontext'])
   })
 })
 

@@ -34,6 +34,16 @@ def _write_plugin(root: Path, *, built: bool = True) -> Path:
     if built:
         (plugin / "lib").mkdir()
         (plugin / "lib" / "index.js").write_text("export const name = 'powercontext-dsh'\n", encoding="utf-8")
+    skill = plugin / "skills/powercontext-project-context"
+    skill.mkdir(parents=True)
+    (skill / "SKILL.md").write_text(
+        "---\n# POWERCONTEXT-GUIDANCE:START\nname: powercontext-project-context\n"
+        "description: PowerContext workflows.\n---\n"
+        "Read [Memory](references/memory.md).\n<!-- POWERCONTEXT-GUIDANCE:END -->\n",
+        encoding="utf-8",
+    )
+    (skill / "references").mkdir()
+    (skill / "references/memory.md").write_text("# Memory\nUse current tools.\n", encoding="utf-8")
     return plugin
 
 
@@ -75,6 +85,40 @@ def test_setup_dsh_does_not_echo_source_credentials(tmp_path: Path, monkeypatch,
         resolve_plugin_source(source=source, ref="master", host="dsh")
 
     assert marker not in str(raised.value)
+
+
+def test_standard_skill_upgrade_rolls_back_native_failure_and_preserves_personal_content(
+    tmp_path: Path, monkeypatch, installed_agent_checks
+) -> None:
+    import powercontext.cli.dsh as dsh_cli
+
+    plugin = _write_plugin(tmp_path / "checkout")
+    home = tmp_path / "dsh"
+    monkeypatch.setenv("DSH_HOME", str(home))
+    monkeypatch.setattr(dsh_cli, "dsh_executable", lambda: "dsh")
+    monkeypatch.setattr(dsh_cli, "_run_dsh", lambda *_args, **_kwargs: "id: powercontext-dsh\n")
+    monkeypatch.setattr("powercontext.cli.dsh_transport.read_dsh_settings", lambda **_kwargs: {})
+    arguments = ["setup", "dsh", "--source", str(plugin), "--json"]
+    first = CliRunner().invoke(create_cli([setup_app]), arguments)
+    assert first.exit_code == 0, first.output
+    skill = Path(json.loads(first.output)["hosts"]["dsh"]["result"]["skill_path"])
+    notes = b"\r\nKeep my personal instructions.\r\n"
+    entry = skill / "SKILL.md"
+    entry.write_bytes(entry.read_bytes() + notes)
+    (skill / "personal.md").write_bytes(b"Keep my notes.\r\n")
+    source = plugin / "skills/powercontext-project-context/SKILL.md"
+    source.write_text(source.read_text().replace("Read [Memory]", "Updated workflow. Read [Memory]"), encoding="utf-8")
+    before = {path.relative_to(home): path.read_bytes() for path in home.rglob("*") if path.is_file()}
+    monkeypatch.setattr(dsh_cli, "_run_dsh", Mock(side_effect=SetupError("native installation failed")))
+    rejected = CliRunner().invoke(create_cli([setup_app]), arguments)
+    assert rejected.exit_code == 1
+    assert {path.relative_to(home): path.read_bytes() for path in home.rglob("*") if path.is_file()} == before
+    monkeypatch.setattr(dsh_cli, "_run_dsh", lambda *_args, **_kwargs: "id: powercontext-dsh\n")
+    retried = CliRunner().invoke(create_cli([setup_app]), arguments)
+    assert retried.exit_code == 0, retried.output
+    assert b"Updated workflow." in entry.read_bytes()
+    assert entry.read_bytes().endswith(notes)
+    assert (skill / "personal.md").read_bytes() == b"Keep my notes.\r\n"
 
 
 def test_setup_dsh_clones_a_github_url_and_replaces_a_broken_checkout(

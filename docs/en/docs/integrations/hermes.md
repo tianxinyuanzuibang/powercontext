@@ -38,6 +38,10 @@ The setup command copies the provider to `$HERMES_HOME/plugins/powercontext` and
 built-in tool override permissions. If `memory.provider` is absent, setup selects PowerContext automatically;
 an existing provider choice, including an explicitly empty value, is preserved. Setup does not start the Server.
 
+Setup installs `powercontext-project-context` under `$HERMES_HOME/skills` for native directory discovery and
+`skill_view` reference reads. The Skill remains discoverable when another memory provider is selected; it can use
+only tools available in the current Hermes catalog.
+
 To switch from an existing provider or change provider settings, run the Hermes memory setup wizard and select
 `PowerContext`:
 

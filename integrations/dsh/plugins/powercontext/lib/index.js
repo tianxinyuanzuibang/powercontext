@@ -21,7 +21,7 @@ import { join, resolve } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { createServer, request } from "node:http";
 import { request as request$1 } from "node:https";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
 //#region src/errors.ts
 const REQUEST_ID_HEADER = "X-PowerContext-Request-ID";
@@ -4243,49 +4243,7 @@ async function recallThenCapture(input, query, userPrompt, observation) {
 }
 
 //#endregion
-//#region src/skill-body.ts
-const SKILL_ROOT = new URL("../skills/powercontext-project-context/", import.meta.url);
-const SKILL_RESOURCE_BASE = {
-	kind: "directory",
-	path: fileURLToPath(SKILL_ROOT)
-};
-const REFERENCE_RESOURCE_BASE = {
-	kind: "directory",
-	path: fileURLToPath(new URL("references/", SKILL_ROOT))
-};
-function readSkillResource(name$1) {
-	return readFileSync(new URL(name$1, SKILL_ROOT), "utf8");
-}
-const PROJECT_CONTEXT_SKILL = readSkillResource("SKILL.md").replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "").trim();
-
-//#endregion
-//#region src/domain-skills.ts
-const DOMAIN_SKILLS = [
-	{
-		name: "powercontext-memory",
-		description: "PowerContext Memory search, inventory, save and correction (搜索记忆、盘点、记住、纠正).",
-		source: "runtime",
-		resourceBase: REFERENCE_RESOURCE_BASE,
-		content: readSkillResource("references/scope-memory.md")
-	},
-	{
-		name: "powercontext-handoff",
-		description: "PowerContext temporary handoff, durable milestone and continuation (临时交接、持久里程碑、接续).",
-		source: "runtime",
-		resourceBase: REFERENCE_RESOURCE_BASE,
-		content: readSkillResource("references/work-handoff.md")
-	},
-	{
-		name: "powercontext-review",
-		description: "PowerContext candidate inspection, review, Experience and Skills (审查候选、经验、技能).",
-		source: "runtime",
-		resourceBase: REFERENCE_RESOURCE_BASE,
-		content: readSkillResource("references/review-publication.md") + "\n" + readSkillResource("references/experience-skills.md")
-	}
-];
-
-//#endregion
-//#region src/skill.ts
+//#region src/guidance.ts
 const GUIDANCE = `PowerContext model-facing capabilities are exposed through DSH's native MCP client.
 The plugin connects the configured Server MCP endpoint and the resulting tools use the exact names
 mcp__powercontext__<operation>. Check that an exact MCP name
@@ -4341,26 +4299,14 @@ candidate material and do not grant installation or execution authority.
 Report only observed results: empty retrieval is normal; failed, denied, unscoped, or unavailable operations did not
 complete the request. Identify the failed operation and safe returned reason without inventing a cause or claiming
 saved/restored context. Continue ordinary work and avoid repeated failed calls.
-Use powercontext-project-context for routing, or powercontext-memory, powercontext-handoff, or powercontext-review
-directly when that domain needs detail and the Skill is available. Loading a Skill is not required before every response.`;
+Use the installed powercontext-project-context Skill and its references when workflow detail is needed and the Skill
+is available. Loading a Skill is not required before every response.`;
 function registerGuidance(ctx) {
 	requireService(ctx, "systemPrompt").section({
 		name: "tool:powercontext",
 		order: 120,
 		text: GUIDANCE
 	});
-}
-function registerSkill(ctx) {
-	const skills = requireService(ctx, "skills");
-	skills.register({
-		name: "powercontext-project-context",
-		description: "PowerContext Memory search/save, inventory, handoff and candidate review (搜索记忆、记住、盘点、交接、审查候选). Route to focused workflows when needed; ordinary coding and current-context summaries need no Skill detour.",
-		source: "runtime",
-		whenToUse: "Use when continuing work across sessions, recalling prior decisions, preparing a handoff, or maintaining durable memory.",
-		content: PROJECT_CONTEXT_SKILL,
-		resourceBase: SKILL_RESOURCE_BASE
-	});
-	for (const skill of DOMAIN_SKILLS) skills.register(skill);
 }
 
 //#endregion
@@ -4370,7 +4316,6 @@ const inject = [
 	"tools",
 	"agents",
 	"commands",
-	"skills",
 	"systemPrompt"
 ];
 const Config = { "~standard": {
@@ -4492,7 +4437,6 @@ async function apply(ctx, config) {
 	registerGuidance(ctx);
 	registerRecall(ctx, runtime, llmMod.createUserMessage, sessionScope.forPreStep);
 	registerCommands(ctx, runtime);
-	registerSkill(ctx);
 	await registerMcp(ctx, runtime.config);
 }
 

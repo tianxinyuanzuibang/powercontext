@@ -47,7 +47,6 @@
     "@deepseek-ai/dsh-llm": "*",
     "@deepseek-ai/dsh-mcp-client": "*",
     "@deepseek-ai/dsh-session": "*",
-    "@deepseek-ai/dsh-skill": "*",
     "@deepseek-ai/dsh-system-prompt": "*",
     "@deepseek-ai/schemastery": "*"
   },
@@ -68,9 +67,6 @@
       "optional": true
     },
     "@deepseek-ai/dsh-session": {
-      "optional": true
-    },
-    "@deepseek-ai/dsh-skill": {
       "optional": true
     },
     "@deepseek-ai/dsh-system-prompt": {

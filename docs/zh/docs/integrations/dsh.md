@@ -50,6 +50,9 @@ Web 安装目录为 `$DSH_HOME/profiles/web`，Desktop 为 `$DSH_HOME/profiles/d
 `package.json` 中安装依赖并启用 bundle，再加载插件包自带的 patch。两个 profile 的用户
 `cordis.patch.yml` 均会保留，安装不会改变另一个 profile 的插件启用状态。
 
+Setup 同时把 `powercontext-project-context` 安装到 `$DSH_HOME/skills`，由 DSH 原生文件加载器读取
+frontmatter 和参考文件。Web 与 Desktop 共用这份标准 Skill；实际工具和 Scope 绑定仍属于当前 profile 与会话。
+
 Desktop 必须使用**桌面版自带的 dsh 命令**，npm/pnpm 版 dsh 无权管理 desktop profile。
 请先启动一次 Desktop 初始化配置，通过 **Manage dsh Command…** 菜单安装命令并打开新终端，
 然后完全退出 Desktop 再安装插件；关闭窗口可能只是隐藏。即使 npm 命令排在前面，Setup 也会继续

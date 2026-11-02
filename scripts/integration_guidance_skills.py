@@ -152,22 +152,12 @@ def file_skill(directory: Path) -> dict[str, Any]:
 
 
 def with_skill_resources(catalog: dict[str, Any]) -> dict[str, Any]:
-    if catalog["host"] == "dsh":
-        skills = catalog.get("skills")
-        if not skills:
-            message = "DSH catalog lacks runtime Skills; export it from the current SDK runtime test"
-            raise ValueError(message)
-        resources = {skill["name"]: skill["content"] for skill in skills}
-        entry = next((skill for skill in skills if skill["name"] == ENTRY_NAME), None)
-        if entry is None:
-            message = f"DSH catalog lacks router Skill {ENTRY_NAME}; export it from the current SDK runtime test"
-            raise ValueError(message)
-        return {**catalog, "skill_resources": resources, "skill": entry}
     skill = file_skill(ROOT / FILE_HOSTS[catalog["host"]])
-    if catalog["host"] == "hermes":
+    if catalog["host"] in {"dsh", "hermes"}:
         native = catalog.get("skill", {})
-        if native.get("name") != f"powercontext:{ENTRY_NAME}" or not isinstance(native.get("description"), str):
-            message = "Hermes catalog lacks native Skill metadata; export it with tests/e2e/test_hermes_skills.py"
+        if native.get("name") != ENTRY_NAME or not isinstance(native.get("description"), str):
+            host = "DSH" if catalog["host"] == "dsh" else "Hermes"
+            message = f"{host} catalog lacks native Skill metadata; export it from the current native host test"
             raise ValueError(message)
         # Discovery must use what the host exposes, even when it is empty or stale.
         skill.update(name=native["name"], description=native["description"])
@@ -196,8 +186,8 @@ class SkillReadingModel:
         workflow = {"skill_search": ("memory", "scope-memory.md"), "skill_handoff": ("handoff", "work-handoff.md")}
         if case in workflow and self.available:
             domain, filename = workflow[case]
-            entry = f"powercontext:{ENTRY_NAME}" if record["host"] == "hermes" else ENTRY_NAME
-            expected = f"powercontext-{domain}" if record["host"] == "dsh" else f"{entry}/references/{filename}"
+            entry = ENTRY_NAME
+            expected = f"{entry}/references/{filename}"
             read = self.reads_before_operation if self.reads_before_operation is not None else list(self.loaded)
             record["skill_workflow"] = {"expected": expected, "read_before_operation": read, "passed": expected in read}
             if expected not in read:
@@ -215,7 +205,7 @@ class SkillReadingModel:
         tool = {
             "name": "read_skill_resource",
             "description": "Evaluation-only Skill reader. Read a visible Skill by its exact name, or a reference as "
-            "<skill-name>/references/<file> after discovering its link. Runtime domain Skills use their own names. "
+            "<skill-name>/references/<file> after discovering its link. "
             "Read only relevant detail when needed; ordinary coding needs no Skill detour. "
             "Read requested guidance before calling a data operation; do not batch these together.",
             "parameters": {

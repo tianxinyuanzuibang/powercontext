@@ -50,6 +50,10 @@ Web installs under `$DSH_HOME/profiles/web`; Desktop installs under `$DSH_HOME/p
 and enables its bundle in that profile's `package.json`. The bundle supplies its own patch. Setup preserves
 both profiles' user `cordis.patch.yml` files and does not enable the plugin in the other profile.
 
+Setup also installs `powercontext-project-context` under `$DSH_HOME/skills`. DSH's native filesystem loader reads
+its frontmatter and references. This standard Skill directory is shared by Web and Desktop; available tools and
+Scope bindings still belong to the active profile and session.
+
 Desktop requires its **Desktop-installed command**, not npm/pnpm dsh. Open Desktop once to initialize its
 profile, use **Manage dsh Command…** to install the command, open a new terminal, then fully quit Desktop
 before setup. Closing the window may only hide it. Setup searches PATH for the Desktop carrier even when

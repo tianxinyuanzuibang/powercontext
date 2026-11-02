@@ -23,7 +23,6 @@ import { setTimeout } from 'node:timers/promises'
 import { test } from 'node:test'
 import { environment, injected, CANARY, CANARY_DESCRIPTION, NATIVE_ERROR_CANARY } from './fixture.mjs'
 import { installIntoHome } from './setup-fixture.mjs'
-import { registerSkill } from '../../src/skill.ts'
 import { MCP_OPERATIONS } from '../../src/mcp-operations.generated.ts'
 
 test('documented setup installs the matched plugin, diagnoses the running host and recalls processed Source', { timeout: 240000 }, async () => {
@@ -64,12 +63,15 @@ test('documented setup installs the matched plugin, diagnoses the running host a
     assert.ok(references.length > 0, 'PowerContext guidance must reach the model before any Skill load')
     for (const name of references) assert.ok(catalog.has(name), `guidance refers to unavailable DSH tool: ${name}`)
     if (process.env.POWERCONTEXT_GUIDANCE_EXPORT) {
-      const skills = []
-      registerSkill({ get: () => ({ register(value) { skills.push(value) } }) })
+      const catalog = request.messages.map(message => typeof message.content === 'string' ? message.content
+        : message.content.map(block => block.text ?? '').join('\n')).join('\n')
+      const description = catalog.match(/^- `powercontext-project-context`: (.+)$/m)?.[1]
+      assert.ok(description, 'the native Skill catalog must expose the installed frontmatter')
       writeFileSync(join(process.env.POWERCONTEXT_GUIDANCE_EXPORT, 'dsh.json'), JSON.stringify({
         host: 'dsh', catalog_source: 'real SDK model request',
         guidance: system.map(message => typeof message.content === 'string' ? message.content : JSON.stringify(message.content)).join('\n'),
-        skill: skills.find(skill => skill.name === 'powercontext-project-context'), skills,
+        skill: { name: 'powercontext-project-context', description,
+          content: readFileSync(join(dshHome, 'skills/powercontext-project-context/SKILL.md'), 'utf8') },
         host_skill_tools: request.tools.map(tool => tool.function).filter(tool => tool.name.includes('skill')),
         tools: request.tools.map(tool => tool.function).filter(tool => tool.name.startsWith('mcp__powercontext__')),
       }, null, 2))
@@ -446,23 +448,30 @@ test('real DSH enforces the host Scope for native MCP path arguments before disp
 })
 
 
-test('real DSH discovers bilingual domains and loads only the requested Skill', { timeout: 120000 }, async () => {
+test('real DSH discovers the installed standard Skill and reads its references', { timeout: 240000 }, async () => {
   const env = await environment()
   try {
-    const { instance } = env.harness()
-    const registered = []
-    registerSkill({ get: () => ({ register(value) { registered.push(value) } }) })
-    for (const domain of registered.filter(skill => skill.name !== 'powercontext-project-context')) {
-      await instance.run(`LOAD_PC_SKILL:${domain.name}`)
+    const installation = await installIntoHome(env.home, { serverUrl: env.baseUrl })
+    const skill = installation.setup.result.skill_path
+    const entry = readFileSync(join(skill, 'SKILL.md'), 'utf8')
+    const description = entry.match(/^description: (.+)$/m)[1]
+    const { instance, dshHome } = env.harness({}, { plugin: installation.plugin, skill })
+    for (const filename of ['scope-memory.md', 'work-handoff.md', 'review-publication.md']) {
+      const path = join(dshHome, 'skills/powercontext-project-context/references', filename)
+      await instance.run(`LOAD_PC_SKILL:powercontext-project-context READ_PC_FILE:${Buffer.from(path).toString('base64url')}`)
       const requests = env.modelRequests.filter(request => request.stream)
       const finalMessages = requests.at(-1).messages
-      assert.ok(JSON.stringify(finalMessages).includes(domain.description), `${domain.name} metadata is not model-visible`)
-      const result = finalMessages.find(message => message.role === 'tool')
-      assert.ok(result, `${domain.name} was not loaded through the host Skill tool`)
-      assert.ok(JSON.stringify(result).includes(domain.content.split('\n').find(line => line.startsWith('# '))))
-      for (const other of registered.filter(skill => skill.name !== domain.name)) {
-        assert.ok(!JSON.stringify(result).includes(other.content.split('\n').find(line => line.startsWith('# '))), `loading ${domain.name} also loaded ${other.name}`)
-      }
+      const catalog = finalMessages.map(message => typeof message.content === 'string' ? message.content
+        : (message.content ?? []).map(block => block.text ?? '').join('\n')).join('\n')
+      const names = [...catalog.matchAll(/^- `(powercontext-[^`]+)`: /gm)].map(match => match[1])
+      assert.deepEqual([...new Set(names)], ['powercontext-project-context'], 'advertise one standard PowerContext Skill')
+      assert.ok(JSON.stringify(finalMessages).includes(description), 'installed frontmatter must reach the model')
+      const results = finalMessages.filter(message => message.role === 'tool')
+      const body = entry.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '')
+      const heading = body.split('\n').find(line => line.startsWith('# '))
+      assert.ok(results.some(result => JSON.stringify(result).includes(heading)), 'the host Skill tool must load the entry')
+      const reference = readFileSync(path, 'utf8').split('\n').find(line => line.startsWith('# '))
+      assert.ok(results.some(result => JSON.stringify(result).includes(reference)), `the host read tool must load ${filename}`)
     }
     await instance.close()
   } finally { await env.close() }

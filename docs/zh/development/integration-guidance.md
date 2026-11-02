@@ -37,7 +37,7 @@ Scope 由宿主和 Server 决定。复用解析后的绑定，不猜测身份或
 | OpenCode | 系统 transform 和原生工具 | `pc_search`、`pc_memory_list`、`pc_remember`；候选审核变更不作为模型工具开放。 |
 | Pi | `before_agent_start` 系统提示和原生工具 | 支持 Memory、Topic Memory、结构化工作与 Handoff，以及产物/候选检查、候选审核和外部 Skill。候选批准、拒绝、修订及精确外部 Skill 导入/分叉需要显式授权和交互确认，不会安装、发布或执行产物。自动召回为空或失败时仍有基础指引。 |
 | OpenClaw | Memory capability 提示和 provider 工具 | `powercontext_memory_search` / `powercontext_memory_store`；提示按当前目录说明 Memory 与结构化工作/Handoff，不推断 Memory 清单或候选 Review。 |
-| Hermes | provider 系统块和工具 schema | `powercontext_search_memory`、`powercontext_remember` 等实际工具；使用 `powercontext:powercontext-project-context` 插件 Skill。 |
+| Hermes | provider 系统块和工具 schema | `powercontext_search_memory`、`powercontext_remember` 等实际工具；使用标准目录中的 `powercontext-project-context` Skill。 |
 | Codex、Claude Code、WorkBuddy | MCP 初始化指引和 OpenAPI 派生描述 | `search_memory`、`list_atomic_memories`、`remember_memory`；各自 `powercontext-project-context` Skill 保持一致。 |
 
 可移植 Agent Plugin 的现有 Skill 使用相同语义。框架适配器与 Bub 验证工具不在本次迁移范围；工具权限、持久化格式、
@@ -57,7 +57,7 @@ pnpm --dir integrations/pi/plugins/powercontext test
 pnpm --dir integrations/openclaw/plugins/memory-powercontext test
 ```
 
-Hermes 在隔离的宿主目录中，通过原生 provider 加载器和 `PluginManager` 导出发现元数据。
+Hermes 在隔离的宿主目录中，通过原生 `skills_list`、`skill_view` 导出标准目录的发现元数据。
 将 `POWERCONTEXT_HERMES_SOURCE` 指向支持的宿主源码，再导出目录：
 
 ```sh

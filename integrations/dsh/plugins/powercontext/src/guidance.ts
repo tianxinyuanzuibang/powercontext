@@ -15,8 +15,6 @@
  */
 
 import { requireService } from './dsh-service.ts'
-import { DOMAIN_SKILLS } from './domain-skills.ts'
-import { PROJECT_CONTEXT_SKILL, SKILL_RESOURCE_BASE } from './skill-body.ts'
 
 export const GUIDANCE = `PowerContext model-facing capabilities are exposed through DSH's native MCP client.
 The plugin connects the configured Server MCP endpoint and the resulting tools use the exact names
@@ -73,8 +71,8 @@ candidate material and do not grant installation or execution authority.
 Report only observed results: empty retrieval is normal; failed, denied, unscoped, or unavailable operations did not
 complete the request. Identify the failed operation and safe returned reason without inventing a cause or claiming
 saved/restored context. Continue ordinary work and avoid repeated failed calls.
-Use powercontext-project-context for routing, or powercontext-memory, powercontext-handoff, or powercontext-review
-directly when that domain needs detail and the Skill is available. Loading a Skill is not required before every response.`
+Use the installed powercontext-project-context Skill and its references when workflow detail is needed and the Skill
+is available. Loading a Skill is not required before every response.`
 
 export function registerGuidance(ctx: { get: (name: string) => unknown }): void {
   const systemPrompt = requireService<{
@@ -85,26 +83,4 @@ export function registerGuidance(ctx: { get: (name: string) => unknown }): void 
     order: 120,
     text: GUIDANCE,
   })
-}
-
-export function registerSkill(ctx: { get: (name: string) => unknown }): void {
-  const skills = requireService<{
-    register: (skill: {
-      name: string
-      description: string
-      source: string
-      content: string
-      resourceBase?: { kind: 'directory'; path: string }
-      whenToUse?: string
-    }) => unknown
-  }>(ctx, 'skills')
-  skills.register({
-    name: 'powercontext-project-context',
-    description: 'PowerContext Memory search/save, inventory, handoff and candidate review (搜索记忆、记住、盘点、交接、审查候选). Route to focused workflows when needed; ordinary coding and current-context summaries need no Skill detour.',
-    source: 'runtime',
-    whenToUse: 'Use when continuing work across sessions, recalling prior decisions, preparing a handoff, or maintaining durable memory.',
-    content: PROJECT_CONTEXT_SKILL,
-    resourceBase: SKILL_RESOURCE_BASE,
-  })
-  for (const skill of DOMAIN_SKILLS) skills.register(skill)
 }

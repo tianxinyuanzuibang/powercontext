@@ -18,7 +18,6 @@ import { describe, expect, it } from 'vitest'
 import { invokeOperation } from '../src/invoke.ts'
 import { PowerContextClient } from '../src/client.ts'
 import { containsSecret } from '../src/secrets.ts'
-import { PROJECT_CONTEXT_SKILL } from '../src/skill-body.ts'
 
 describe('secrets', () => {
   it('rejects token-like markers', () => {

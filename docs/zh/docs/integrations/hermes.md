@@ -37,6 +37,9 @@ Setup 命令会把 provider 复制到 `$HERMES_HOME/plugins/powercontext`，安�
 未配置 `memory.provider` 时，setup 自动选择 PowerContext；已有 provider 选择（包括显式空值）会保留。
 Setup 不会启动 Server。
 
+Setup 同时把 `powercontext-project-context` 安装到 `$HERMES_HOME/skills`，由 Hermes 原生目录发现和
+`skill_view` 加载正文及参考文件。选择其他 Memory provider 时仍可发现这份 Skill；它只能使用当前宿主目录中的工具。
+
 需要从现有 provider 切换到 PowerContext，或调整 provider 配置时，运行 Hermes Memory 设置向导并选择 `PowerContext`：
 
 ```bash

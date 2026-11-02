@@ -37,8 +37,9 @@ scripts/integration_guidance_skills.py <--- HOST_GUIDANCE
 
 `make integration-guidance` copies the shared resources and adapts MCP declarations for Codex, Claude Code,
 WorkBuddy, ZCode, Kimi Code, and MiniMax. Each distribution contains its own checked-in files, so an installed package
-does not depend on another host's package. DSH reads those packaged files to register runtime Skills and their
-resource directories. Evaluation vendors pin immutable shared-source commits for replay.
+does not depend on another host's package. DSH and Hermes setup install the Skill into their native standard
+directories, where the host discovers the entry from its frontmatter and loads references as files. Evaluation vendors
+pin immutable shared-source commits for replay.
 
 Skill packages use their actual files and local references for installation checks; no private resource inventory
 file is required. Installers include auxiliary files such as assets and native metadata, even when the entry does
@@ -56,20 +57,20 @@ content while preserving personal text outside those regions and existing settin
 | Hosts | Discoverable entry | Workflow detail |
 | --- | --- | --- |
 | Codex, Claude Code, WorkBuddy, Kimi Code, portable Agent Plugin, Pi, OpenCode | `powercontext-project-context` | Shared Memory, Handoff, Review, and Experience/Skills references plus host-owned `references/host.md`. |
-| Hermes | `powercontext:powercontext-project-context` | Shared references with native tool names and stricter host policies supplied by the actual catalog and host. |
+| Hermes | `powercontext-project-context` | Installed under `$HERMES_HOME/skills`; native directory discovery and reference loading. |
 | MiniMax | `powercontext-project-context` | Shared workflow references, HTTP boundary guidance, and examples. |
 | OpenClaw | `powercontext-project-context` | Shared references; inventory and candidate Review remain unavailable in the native adapter. |
-| DSH | Runtime `powercontext-project-context` router | Independently registered `powercontext-memory`, `powercontext-handoff`, `powercontext-review`, read from packaged files with directory resource bases. |
+| DSH | `powercontext-project-context` | Installed under `$DSH_HOME/skills`; native filesystem discovery, Skill loading, and reference reads. |
 
 File-backed hosts ship references beside the installed entry.
 OpenCode's npm archive includes the complete Skill directory. WorkBuddy's installer resolves Python and Scope-helper
 placeholders in all installed Markdown resources. OpenClaw uses the SDK's manifest `skills` directory mechanism.
-DSH uses its runtime Skill service to discover and load one domain directly; its published package must retain the
-Skill directory and linked files.
+DSH and Hermes installers copy the complete Skill directory to their native user Skill roots. DSH Web and Desktop
+share this Skill while retaining separate plugin profiles. Hermes discovers the Skill independently of the selected
+memory provider. Actual tool availability and permissions still come from the active host catalog.
 
-All maintained Skill entries use `powercontext-project-context`, including runtime registration and installation
-paths. There are no alternate entry names. DSH's separately loadable domain Skills keep their domain-specific names.
-Framework adapters and Bub do not expose these Skill entries.
+All maintained Skill entries and installation paths use `powercontext-project-context`. Workflow references remain
+files within that Skill. Framework adapters and Bub do not expose these Skill entries.
 
 ## Workflow boundaries
 
@@ -97,8 +98,9 @@ behavior, or resolver execution; host behavior needs separate qualification.
 Run `uv run pytest tests/test_layered_skills.py` to inspect OpenCode, OpenClaw, Pi, and DSH npm archives and read their
 reachable Skill references. Installer regressions exercise actual
 OpenCode reference copying and WorkBuddy placeholder expansion. Pi's package test uses its SDK Skill loader. OpenClaw's
-package test invokes `skills list --json` with an isolated profile. DSH's runtime suite verifies model-visible domain
-metadata and loading via the real host `skill` tool. These tests are separate from live-model routing evidence.
+package test invokes `skills list --json` with an isolated profile. DSH's runtime suite verifies standard-directory
+discovery, model-visible frontmatter, the real host `skill` tool, and reference reads. Hermes acceptance uses its native
+`skills_list` and `skill_view` directory workflow. These tests are separate from live-model routing evidence.
 
 Export catalogs as described in [tool-routing validation](integration-guidance.md), then opt into resource reads:
 
