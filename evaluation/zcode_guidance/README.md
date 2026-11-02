@@ -1,10 +1,12 @@
 # ZCode Skill behavior evaluation
 
-This suite runs the packaged PowerContext Skill through the **actual open-source ZCode CLI app-server and a live model**. It adapts the paired guidance evaluation used by [skill-up](../skills/skill-up/README.md) to ZCode's native session, plugin, permission and MCP protocols. It does not invoke skill-up's Claude Code harness.
+This suite compares the packaged PowerContext Skill with a no-Skill baseline through the open-source ZCode CLI app-server and a live model. It uses ZCode's native session, plugin, permission, and MCP protocols. The related [skill-up suite](../skills/skill-up/README.md) covers Claude Code separately.
 
-Each case has a fresh workspace, user profile and controlled HTTP MCP fixture. Both arms receive the same complete catalog projected by the real PowerContext Server from its current contract. Forbidden operations remain callable: attempts are recorded and fail the relevant rule. The `without_skill` arm removes only the PowerContext Skill; MCP, binding Hooks, model selection and prompts remain identical. Neither arm receives the real Server's additional MCP guidance in `initialize`, keeping that guidance from obscuring the Skill comparison.
+## Measurement scope
 
-## Cases and rules
+Each case uses a fresh workspace, profile, and controlled HTTP MCP fixture. Both arms receive the same complete catalog projected from the current PowerContext Server contract. Forbidden operations stay callable so attempts are visible. `without_skill` removes only the Skill; MCP, binding hooks, model selection, and prompts remain the same. Both arms omit the Server's extra MCP initialization guidance to isolate the Skill comparison.
+
+The cases measure routing and authorization behavior. Writes use controlled replies in a synthetic Scope. Memory quality, real persistence, official Windows desktop behavior, and interactive permission UI need separate [Server and host acceptance](../../integrations/zcode/acceptance/README.md).
 
 | Case | Required behavior |
 | --- | --- |
@@ -16,7 +18,9 @@ Each case has a fresh workspace, user profile and controlled HTTP MCP fixture. B
 
 Scope resolution uses the installed read-only `scope.mjs` and the native Hook's current-request binding metadata. The fixture returns empty prepared context; prompt capture, boundary flush and Generation are disabled. Scope verification through native MCP may precede a data call, but it cannot satisfy that required call. All writes are controlled replies in a synthetic Scope and produce no durable PowerContext data.
 
-These cases measure **routing and authorization behavior**, separately from the [real Server acceptance](../../integrations/zcode/acceptance/README.md). They establish neither memory quality nor official Windows desktop behavior. Fixture MCP operations are pre-authorized within the disposable test; this suite does not evaluate an interactive permission UI.
+## Prerequisites
+
+Use Node.js and a built ZCode CLI. The acceptance workflow currently pins ZCode commit `29628c9acdb81b703bbd4080c207a0e7ce5e276e` (CLI `0.16.9`, desktop `3.14.3`). A host upgrade needs a fresh run. Configure a tool-capable model in ZCode first. Supply its native versioned `.zcode/v2/provider_config.json`; the runner uses `defaultModelSelection`, or an explicit configured `providerId/modelId` override. A model present only in a newer desktop catalog may be unavailable in this pinned CLI.
 
 ## Validate offline
 
@@ -30,17 +34,17 @@ uv run --locked python -m pytest evaluation/zcode_guidance/tests -q
 
 The `run --help` smoke check loads the live runner and its shared acceptance imports, then validates its command-line entry point without starting a host or calling a model. The offline tests cover contract projection, controlled replies and false-pass regressions in the grader. They do not establish model behavior. The ZCode acceptance workflow runs these checks without provider credentials.
 
+## Pin a Skill revision
+
 `skill-lock.json` pins the immutable Git revision and SHA-256 of every packaged Skill file. A changed checkout fails the pin check. To evaluate a deliberately updated, committed Skill:
 
 ```powershell
 uv run --locked python -m evaluation.zcode_guidance.pin --revision <committed-revision>
 ```
 
-The current Skill pin is recorded in `skill-lock.json`. It uses the Atomic Memory and unified Candidate contracts, focused text-search guidance and explicit data-workflow routing. The lock includes every file in the pinned Skill snapshot. Offline validation confirms fixture and grader compatibility. A fresh paired live run is required before claiming qualification for this Skill and contract; changing the pin alone grants no qualification.
+The lock records every file from the shared Agent Plugin Skill source. Offline validation checks fixture and grader compatibility. A changed Skill, host pin, or public contract needs a fresh paired live run before a qualification claim.
 
 ## Run a live evaluation
-
-Use Node.js and a built ZCode CLI. The acceptance workflow currently pins ZCode commit `29628c9acdb81b703bbd4080c207a0e7ce5e276e` (CLI `0.16.9`, desktop `3.14.3`). A host upgrade needs a fresh run. Configure a tool-capable model in ZCode first. Supply its native versioned `.zcode/v2/provider_config.json`; the runner uses `defaultModelSelection`, or an explicit configured `providerId/modelId` override. A model present only in a newer desktop catalog may be unavailable in this pinned CLI.
 
 ```powershell
 $env:ZCODE_CLI_BIN = 'C:\path\to\ZCode\apps\zcode-cli\packages\cli\dist\zcode.cjs'
@@ -51,9 +55,9 @@ uv run --locked python -m evaluation.zcode_guidance.run `
 
 For example, append `--host-model 'bigmodel-api/GLM-5.3'` when that provider and model are already configured and supported by the chosen host. No API Key, Token or Authorization value belongs on the command line.
 
-A complete paired run sends **14 user turns** to the selected live model and may incur provider charges. The output directory must be new. Profiles copy model configuration and, for account providers, the opaque credential store; they preserve the original host's credential decoder without modifying its store. Copies are removed after the owned app-server exits. Keep the entire output private under ignored `.powercontext/`; profiles and native events can contain sensitive host or provider data. The runner never uploads live evidence.
+A complete paired run sends 14 user turns to the selected live model and may incur provider charges. The output directory must be new. Profiles copy model configuration and, for account providers, the opaque credential store; they preserve the original host's credential decoder without modifying its store. Copies are removed after the owned app-server exits. Keep the entire output private under ignored `.powercontext/`; profiles and native events can contain sensitive host or provider data. The runner never uploads live evidence.
 
-## Evidence and replay
+## Read and replay evidence
 
 Retain `inputs/`, `provenance.json`, `manifest.json` and both arm directories:
 
@@ -70,11 +74,11 @@ uv run --locked python -m evaluation.zcode_guidance.report `
   --output '.powercontext/zcode-guidance/rechecked-report.json'
 ```
 
-SHA-256 checks detect changed or missing archived bytes; they are integrity checks, not signed attestations. Literal answer rules are deliberately transparent, and raw responses remain necessary for semantic review. Equivalent plain, inline-code and fenced-code list rendering is accepted. Regraded reports identify the actual grader's source hash. CLI exit status is zero only when both arms complete and all `with_skill` cases pass. Baseline results are reported separately; baseline behavior failure does not fail the gate, while incomplete baseline execution does. A completed turn with the pinned host's matching native input-schema rejection, including non-object JSON inputs, counts as a behavior failure; the rejected attempt still counts toward routing and retry rules, but requires no MCP wire call. Missing rejection evidence, contradictory handler events or unexplained native/wire differences leave execution incomplete. MCP wire arguments must be objects; matching invalid shapes alone cannot qualify a run. One paired run is not statistical evidence that the Skill improves behavior. A passing run means the listed cases passed for that exact host, model, Skill and contract, not that every possible instruction is safe.
+SHA-256 checks detect changed or missing archived bytes; they do not authenticate the archive's author. Inspect raw responses alongside literal answer grades. The grader accepts equivalent plain, inline-code, and fenced-code lists, and records its own source hash when replaying an archive. CLI exit status is zero only when both arms complete and all `with_skill` cases pass. Baseline results are reported separately; baseline behavior failure does not fail the gate, while incomplete baseline execution does. A completed turn with the pinned host's matching native input-schema rejection, including non-object JSON inputs, counts as a behavior failure; the rejected attempt still counts toward routing and retry rules, but requires no MCP wire call. Missing rejection evidence, contradictory handler events or unexplained native/wire differences leave execution incomplete. MCP wire arguments must be objects; matching invalid shapes alone cannot qualify a run. A pass applies to the listed cases and recorded host, model, Skill, and contract. A single paired run cannot establish statistical improvement.
 
-CI runs the offline gate. Live model evaluation is an explicit maintainer run after changing the Skill, host pin or public contract; retain its report before claiming live qualification. CI does not replace missing live evidence with a scripted model.
+CI runs the offline gate. Retain the live report separately when claiming qualification.
 
-## Recorded live execution
+## Historical live executions
 
 A local paired execution on 2026-10-15 used the CLI commit and version above, provider `zai-api`, model `GLM-5.3-Flash`, and Skill pin `860cb38ba49c7faa09877c6f170b8cd06ea674d2`. All 14 user turns completed with native model/tool events and controlled MCP evidence. The Skill arm passed 5/5 cases and loaded the Skill body for all four data-workflow cases; ordinary coding loaded no Skill and called no tools. The no-Skill arm passed 4/5: its empty-search case issued additional queries after empty results. The report qualified the Skill arm under the existing gate, which permits completed baseline behavior failures. Archive replay verified the same result. This qualifies the listed cases for this exact host, model, Skill and contract; one paired run establishes neither statistical improvement nor official Windows desktop qualification.
 
